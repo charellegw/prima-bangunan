@@ -1,341 +1,301 @@
 @extends('layouts.app')
 
+@section('title', $item->name . ' — Prima Bangunan')
+
 @section('content')
-<div class="container">
-
-    {{-- ITEM HEADER --}}
-    <div class="card border-0 rounded-4 overflow-hidden mb-4">
-        <div class="row g-0">
-
-            @php
-                use Illuminate\Support\Facades\Storage;
-
-                $image = $item->image_url
-                    ? Storage::url($item->image_url)
-                    : asset('image.png');
-            @endphp
-
-            {{-- IMAGE --}}
-            <div class="col-lg-4">
-                <div class="image-wrapper">
-                    <img
-                        src="{{ $image }}"
-                        alt="{{ $item->name }}"
-                        class="item-image"
-                    >
-                </div>
-            </div>
-
-            {{-- CONTENT --}}
-            <div class="col-lg-8">
-                <div class="card-body p-4 p-lg-5">
-
-                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
-
-                        <div>
-
-                            <h2 class="fw-bold mb-2">
-                                {{ $item->name }}
-                            </h2>
-
-                            @if ($item->stock == 0)
-                                <span class="badge badge-soft-danger">
-                                    Stok Habis
-                                </span>
-                            @elseif ($item->stock < 10)
-                                <span class="badge badge-soft-warning">
-                                    Stok Menipis
-                                </span>
-                            @else
-                                <span class="badge badge-soft-success">
-                                    Stok Aman
-                                </span>
-                            @endif
-
-                        </div>
-
-                        <div class="text-lg-end">
-
-                            <div class="text-muted small">
-                                Harga Jual
-                            </div>
-
-                            <div class="fs-2 fw-bold">
-                                Rp {{ number_format($item->price,0,',','.') }}
-                            </div>
-
-                            <div class="text-muted small mt-2">
-                                Harga Reseller
-                            </div>
-
-                            <div class="fs-5 fw-semibold text-success">
-                                Rp {{ number_format($item->reseller_price,0,',','.') }}
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    {{-- INFO --}}
-                    <div class="row g-3 mt-4">
-
-                        <div class="col-md-4">
-                            <div class="info-card p-3 h-100">
-                                <small class="text-muted d-block mb-1">
-                                    Brand
-                                </small>
-
-                                <div class="fw-semibold">
-                                    {{ $item->brand }}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="info-card p-3 h-100">
-                                <small class="text-muted d-block mb-1">
-                                    Category
-                                </small>
-
-                                <div class="fw-semibold">
-                                    {{ $item->category->name }}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="info-card p-3 h-100">
-                                <small class="text-muted d-block mb-1">
-                                    Stock
-                                </small>
-
-                                <div class="fw-semibold">
-                                    {{ $item->stock }} pcs
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    {{-- DESCRIPTION --}}
-                    <div class="mt-5">
-
-                        <h6 class="fw-bold mb-3">
-                            Deskripsi
-                        </h6>
-
-                        <p class="text-secondary mb-0">
-                            {{ $item->description }}
-                        </p>
-
-                    </div>
-
-                    {{-- BUTTON --}}
-                    <div class="d-flex flex-column flex-md-row gap-3 mt-5">
-
-                        <a class="btn btn-primary-soft flex-fill py-3 rounded-3">
-                            Edit Item
-                        </a>
-
-                        <a class="btn btn-danger-soft flex-fill py-3 rounded-3">
-                            Hapus Item
-                        </a>
-
-                    </div>
-
-                </div>
-            </div>
-
+<div class="container-fluid p-0">
+    <!-- Breadcrumb & Back -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ route('item.index') }}" class="btn btn-light border rounded-pill px-3 py-1 text-secondary small">
+                <i class="bi bi-arrow-left me-1"></i> Kembali ke Katalog
+            </a>
+            <span class="text-muted small">/</span>
+            <span class="text-secondary small fw-medium">{{ $item->category->name ?? 'Material' }}</span>
+            <span class="text-muted small">/</span>
+            <span class="text-dark small fw-bold">{{ $item->name }}</span>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-primary rounded-pill px-3 py-1 small fw-semibold" data-bs-toggle="modal" data-bs-target="#modalEditBarang">
+                <i class="bi bi-pencil-square me-1"></i> Edit Barang
+            </button>
+            <form action="{{ route('item.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus barang ini? Data transaksi lama tetap tersimpan.');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-outline-danger rounded-pill px-3 py-1 small fw-semibold">
+                    <i class="bi bi-trash me-1"></i> Hapus
+                </button>
+            </form>
         </div>
     </div>
 
-    {{-- TABLE WRAPPER (biar bisa scroll kalau lokasi banyak) --}}
-    <div class="card border-primary">
-        <div class="card-body">
-            {{-- HEADER --}}
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="mb-0 fw-medium">
-                    Harga Beli Supplier
-                </h6>
-
-                <button class="btn btn-primary-soft btn-sm"
-                        onclick="createSupplier()">
-                    + Tambah Supplier
-                </button>
+    <!-- Main Item Card -->
+    <div class="card card-custom p-4 mb-4">
+        <div class="row g-4 align-items-center">
+            <!-- Foto Barang -->
+            <div class="col-12 col-md-4 col-lg-3">
+                <div class="rounded-4 bg-light overflow-hidden d-flex align-items-center justify-content-center p-3 border" style="height: 240px;">
+                    @if($item->image_url)
+                        <img src="{{ $item->image_url }}" alt="{{ $item->name }}" class="w-100 h-100 object-fit-cover rounded-3">
+                    @else
+                        <div class="text-secondary opacity-50 text-center">
+                            <i class="bi bi-box-seam fs-1"></i>
+                            <div class="small mt-2">Tidak ada foto</div>
+                        </div>
+                    @endif
+                </div>
             </div>
 
-            {{-- NO DATA --}}
-            @if($suppliers->count() == 0)
-                <div class="col-12 text-center py-5">
-                    <div class="text-muted">
-                        <i class="bi bi-inbox fs-1 mb-3 d-block"></i>
-                        <p class="mb-0 fw-semibold">Tidak ada data harga beli dari supplier</p>
-                        <small>Silahkan masukkan data supplier terlebih dahulu</small>
+            <!-- Informasi Pokok Barang -->
+            <div class="col-12 col-md-8 col-lg-9">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill">
+                        {{ $item->category->name ?? 'Material Umum' }}
+                    </span>
+                    @if($item->brand)
+                        <span class="badge bg-secondary-subtle text-secondary border px-3 py-1 rounded-pill">
+                            Merek: {{ $item->brand }}
+                        </span>
+                    @endif
+                </div>
+
+                <h3 class="fw-bold text-dark mb-2">{{ $item->name }}</h3>
+                <p class="text-muted small mb-3">{{ $item->description ?: 'Belum ada deskripsi untuk barang ini.' }}</p>
+
+                <div class="row g-3">
+                    <!-- Stok Realtime -->
+                    <div class="col-6 col-sm-4">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="text-muted small mb-1">Stok Tersedia:</div>
+                            <div class="fs-4 fw-bold {{ $item->stock <= 0 ? 'text-danger' : ($item->stock <= 10 ? 'text-warning-emphasis' : 'text-dark') }}">
+                                {{ $item->stock }} <span class="fs-6 fw-normal text-muted">unit</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Harga Orang (Eceran) -->
+                    <div class="col-6 col-sm-4">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="text-muted small mb-1">Harga Orang (Eceran):</div>
+                            <div class="fs-4 fw-bold text-primary">
+                                Rp {{ number_format($item->price, 0, ',', '.') }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Harga Retail (Grosir) -->
+                    <div class="col-12 col-sm-4">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="text-muted small mb-1">Harga Retail (Toko):</div>
+                            <div class="fs-4 fw-bold text-success">
+                                Rp {{ number_format($item->retail_price, 0, ',', '.') }}
+                            </div>
+                        </div>
                     </div>
                 </div>
-            @else
-
-            {{-- HARGA SUPPLIER --}}
-            <div class="table-responsive overflow-hidden">
-                {{-- TABLE --}}
-                <table class="table align-middle text-center">
-                    <thead style="text-transform: uppercase;">
-                        <tr>
-                            <th class="text-start fw-medium">Supplier</th>
-
-                            @foreach ($locations as $location)
-                                <th class="fw-medium">{{ $location }}</th>
-                            @endforeach
-
-                            <th class="fw-medium">Aksi</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        @foreach ($suppliers as $supplier)
-                            <tr>
-                                {{-- SUPPLIER --}}
-                                <td class="text-start">
-                                    {{ $supplier->name }}
-
-                                    <div class="small text-muted">
-                                        {{ $supplier->location ?? 'No Location' }}
-                                    </div>
-                                </td>
-
-                                {{-- PRICES --}}
-                                @foreach($locations as $location)
-                                    <td>
-                                        @php
-                                            $price = $prices[$supplier->id][$location] ?? null;
-                                        @endphp
-
-                                        @if($price)
-                                            <div class="fw-bold text-primary">
-                                                {{ number_format($price['pcs'], 0, ',', '.') }}/pcs
-                                            </div>
-                                            <div class="small text-success">
-                                                {{ number_format($price['lusin'], 0, ',', '.') }}/lusin
-                                            </div>
-                                        @else
-                                            <span class="text-danger fw-bold">-</span>
-                                        @endif
-                                    </td>
-                                @endforeach
-
-                                <td>
-                                    <div class="d-flex justify-content-center gap-2">
-                                        <button
-                                            class="btn btn-warning-soft btn-sm"
-                                            onclick="editSupplier(this)"
-                                            data-id="{{ $supplier->id }}"
-                                            data-name="{{ $supplier->name }}"
-                                            data-location="{{ $supplier->location }}"
-                                            data-unit="{{ optional($supplier->supplierPrices->first())->unit_price }}"
-                                            data-dozen="{{ optional($supplier->supplierPrices->first())->dozen_price }}">
-                                            Edit
-                                        </button>
-
-                                        <button class="btn btn-danger-soft btn-sm"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#deleteSupplierModal{{ $supplier->id }}">
-
-                                            Hapus
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-
-                {{-- SUPPLIER DELETE MODAL --}}
-                @foreach ($suppliers as $supplier)
-                    @include('partials.delete-modal', [
-                        'modalId' => 'deleteSupplierModal'.$supplier->id,
-                        'title' => 'Hapus Supplier?',
-                        'subtitle' => 'Supplier <strong>'.$supplier->name.'</strong> akan dihapus secara permanen.',
-                        'action' => route('supplier.price.destroy', [$item->id, $supplier->id]),
-                    ])
-                @endforeach
             </div>
+        </div>
+    </div>
 
-            @endif
+    <!-- TABEL SUPPLIER (SESUAI ATURAN SPESIFIKASI PROMPT) -->
+    <!-- "Untuk detail barang, sertakan tabel/informasi tentang supplier barang, harganya, dan lokasi nya, dan namanya." -->
+    <div class="card card-custom p-0 mb-4 overflow-hidden">
+        <div class="card-header bg-white border-bottom py-3 px-4 d-flex align-items-center justify-content-between">
+            <div>
+                <h5 class="fw-bold text-dark mb-1"><i class="bi bi-truck me-2 text-primary"></i> Informasi Supplier & Harga Beli</h5>
+                <p class="text-muted small mb-0">Daftar supplier penyedia barang ini beserta lokasi gudang dan perbandingan harga satuan & harga lusin.</p>
+            </div>
+            <div>
+                <button type="button" class="btn btn-sm btn-primary-custom rounded-pill" data-bs-toggle="modal" data-bs-target="#modalTambahSupplierPrice">
+                    <i class="bi bi-plus-lg me-1"></i> Tambah Supplier
+                </button>
+            </div>
+        </div>
 
-            {{-- SUPPLIER MODAL --}}
-            @include('partials.supplier-modal')
-            <input
-                type="hidden"
-                id="updateSupplierRoute"
-                value="{{ route('supplier.price.update', [$item->id, '__SUPPLIER__']) }}">
+        <div class="card-body p-0 table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light small text-secondary">
+                    <tr>
+                        <th class="ps-4">Nama Supplier</th>
+                        <th>Lokasi Supplier</th>
+                        <th>Kontak Telepon</th>
+                        <th>Harga Beli Satuan (Unit)</th>
+                        <th>Harga Beli Per Lusin</th>
+                        <th class="pe-4 text-end">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($item->supplierPrices as $sp)
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark">{{ $sp->supplier->name ?? 'Supplier' }}</div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center text-secondary small">
+                                <i class="bi bi-geo-alt-fill text-danger me-1"></i>
+                                <span>{{ $sp->supplier->location ?: 'Lokasi belum dicatat' }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="text-muted small">
+                                <i class="bi bi-telephone me-1"></i> {{ $sp->supplier->phone ?: '-' }}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="fw-bold text-dark">Rp {{ number_format($sp->unit_price, 0, ',', '.') }}</span>
+                        </td>
+                        <td>
+                            @if($sp->lusin_price > 0)
+                                <span class="fw-bold text-primary">Rp {{ number_format($sp->lusin_price, 0, ',', '.') }}</span>
+                                <small class="text-muted d-block" style="font-size: 11px;">(Rp {{ number_format($sp->lusin_price / 12, 0, ',', '.') }}/pcs)</small>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+                        <td class="pe-4 text-end">
+                            <form action="{{ route('item.supplier.destroy', [$item->id, $sp->supplier_id]) }}" method="POST" onsubmit="return confirm('Hapus relasi harga dari supplier ini?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-outline-danger border-0 rounded-circle" title="Hapus Relasi">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            <i class="bi bi-building-exclamation fs-3 text-secondary opacity-50 d-block mb-2"></i>
+                            Belum ada data supplier yang terhubung untuk barang ini.
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalTambahSupplierPrice">
+                                    <i class="bi bi-plus-lg me-1"></i> Hubungkan Supplier Sekarang
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-    const deleteModal = document.getElementById('deleteModal');
+<!-- Modal Tambah Relasi Supplier & Harga -->
+<div class="modal fade" id="modalTambahSupplierPrice" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <form action="{{ route('item.supplier.store', $item->id) }}" method="POST">
+                @csrf
+                <div class="modal-header border-bottom py-3 px-4">
+                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-truck me-2 text-primary"></i> Hubungkan Supplier & Harga Beli</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-dark">Pilih Supplier <span class="text-danger">*</span></label>
+                        <select name="supplier_id" class="form-select" required>
+                            <option value="">Pilih Supplier...</option>
+                            @foreach($suppliers as $sup)
+                                <option value="{{ $sup->id }}">{{ $sup->name }} ({{ $sup->location ?: 'Lokasi -' }})</option>
+                            @endforeach
+                        </select>
+                    </div>
 
-    if (deleteModal) {
-        deleteModal.addEventListener('show.bs.modal', function () {
-            console.log("");
-        });
-    }
-});
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-dark">Harga Beli Satuan (Unit Price) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">Rp</span>
+                            <input type="number" name="unit_price" class="form-control" min="0" placeholder="0" required>
+                        </div>
+                    </div>
 
-let supplierModal;
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-dark">Harga Beli Per Lusin (Lusin Price)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">Rp</span>
+                            <input type="number" name="lusin_price" class="form-control" min="0" placeholder="0">
+                        </div>
+                        <small class="text-muted" style="font-size: 11px;">Biarkan kosong bila ingin dihitung otomatis 12x harga satuan.</small>
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary-custom rounded-pill px-4">Simpan Supplier</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
-document.addEventListener('DOMContentLoaded', function () {
-    const supplierModalElement = document.getElementById('supplierModal');
+<!-- Modal Edit Barang -->
+<div class="modal fade" id="modalEditBarang" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <form action="{{ route('item.update', $item->id) }}" method="POST">
+                @csrf
+                @method('PATCH')
+                <div class="modal-header border-bottom py-3 px-4">
+                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-pencil-square me-2 text-primary"></i> Edit Data Barang</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-8">
+                            <label class="form-label small fw-semibold text-dark">Nama Barang <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" value="{{ $item->name }}" required>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label small fw-semibold text-dark">Merek / Brand</label>
+                            <input type="text" name="brand" class="form-control" value="{{ $item->brand }}">
+                        </div>
 
-    supplierModal = new bootstrap.Modal(supplierModalElement);
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-dark">Kategori</label>
+                            <select name="category_id" class="form-select">
+                                <option value="">Pilih Kategori...</option>
+                                @foreach($categories as $cat)
+                                    <option value="{{ $cat->id }}" {{ $item->category_id == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-dark">Stok <span class="text-danger">*</span></label>
+                            <input type="number" name="stock" class="form-control" min="0" value="{{ $item->stock }}" required>
+                        </div>
 
-    supplierModalElement.addEventListener('hide.bs.modal', function () {
-        setTimeout(() => {
-            if (document.activeElement) {
-                document.activeElement.blur();
-            }
-        }, 0);
-    });
-});
-    
-function createSupplier() {
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-dark">Harga Eceran ("Orang") <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">Rp</span>
+                                <input type="number" name="price" class="form-control" min="0" value="{{ (int)$item->price }}" required>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-dark">Harga Grosir ("Retail") <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">Rp</span>
+                                <input type="number" name="retail_price" class="form-control" min="0" value="{{ (int)$item->retail_price }}" required>
+                            </div>
+                        </div>
 
-    document.getElementById('supplierModalTitle').innerText = 'Tambah Supplier';
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold text-dark">URL Gambar</label>
+                            <input type="url" name="image_url" class="form-control" value="{{ $item->image_url }}">
+                        </div>
 
-    document.getElementById('supplierForm').action =
-        "{{ route('supplier.price.store', $item->id) }}";
-
-    document.getElementById('formMethod').value = "POST";
-
-    document.getElementById('supplierName').value = "";
-    document.getElementById('supplierLocation').value = "";
-    document.getElementById('supplierUnitPrice').value = "";
-    document.getElementById('supplierDozenPrice').value = "";
-
-    supplierModal.show();
-}
-
-function editSupplier(button) {
-    console.log(button);
-
-    document.getElementById('supplierModalTitle').innerText = 'Edit Supplier';
-
-    const url = document
-        .getElementById('updateSupplierRoute')
-        .value
-        .replace('__SUPPLIER__', button.dataset.id);
-
-    document.getElementById('supplierForm').action = url;
-
-    document.getElementById('formMethod').value = "PATCH";
-
-    document.getElementById('supplierName').value = button.dataset.name;
-    document.getElementById('supplierLocation').value = button.dataset.location;
-    document.getElementById('supplierUnitPrice').value = button.dataset.unit;
-    document.getElementById('supplierDozenPrice').value = button.dataset.dozen;
-
-    supplierModal.show();
-}
-</script>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold text-dark">Deskripsi</label>
+                            <textarea name="description" rows="3" class="form-control">{{ $item->description }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary-custom rounded-pill px-4">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection

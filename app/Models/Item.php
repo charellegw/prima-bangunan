@@ -2,39 +2,47 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Item extends Model
 {
-    /** @use HasFactory<\Database\Factories\ItemFactory> */
-    use HasFactory;
-    use HasUuids;
+    use HasFactory, HasUuids;
 
     protected $keyType = 'string';
     public $incrementing = false;
 
     protected $fillable = [
-        'category_id',
+        'id',
         'store_id',
+        'category_id',
         'name',
         'brand',
         'stock',
-        'description',
         'price',
-        'reseller_price',
+        'retail_price',
         'image_url',
+        'description',
     ];
 
-    public function category()
+    protected function casts(): array
     {
-        return $this->belongsTo(ItemCategory::class, 'category_id');
+        return [
+            'stock' => 'integer',
+            'price' => 'decimal:2',
+            'retail_price' => 'decimal:2',
+        ];
     }
 
     public function store()
     {
-        return $this->belongsTo(Store::class, 'store_id');
+        return $this->belongsTo(Store::class);
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(ItemCategory::class, 'category_id');
     }
 
     public function supplierPrices()
@@ -42,10 +50,10 @@ class Item extends Model
         return $this->hasMany(SupplierPrice::class);
     }
 
-    public function suppliers() 
+    public function suppliers()
     {
         return $this->belongsToMany(Supplier::class, 'supplier_prices')
-            ->withPivot('unit_price', 'dozen_price')
+            ->withPivot('id', 'unit_price', 'lusin_price')
             ->withTimestamps();
     }
 
@@ -62,5 +70,13 @@ class Item extends Model
     public function shipmentDetails()
     {
         return $this->hasMany(ShipmentDetail::class);
+    }
+
+    /**
+     * Dapatkan harga berdasarkan client_type (orang vs retail)
+     */
+    public function getPriceForClientType(string $clientType): float
+    {
+        return $clientType === 'retail' ? (float) $this->retail_price : (float) $this->price;
     }
 }

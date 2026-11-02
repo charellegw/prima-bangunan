@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Models\Store;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -31,19 +35,28 @@ class AuthController extends Controller
         }
 
         $user = User::create([
-            'id' => Str::uuid(),
+            'id' => (string) Str::uuid(),
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'status' => 'inactive',
-            'otp_verified' => false,
+            'status' => 'verified',
+            'otp_verified' => true,
         ]);
 
-        Auth::login($user);
-        $user->sendOTPNotification();
+        // Hubungkan user ke toko atau buat toko jika belum ada
+        $defaultStore = Store::first();
+        if (!$defaultStore) {
+            Store::create([
+                'id' => (string) Str::uuid(),
+                'owner_id' => $user->id,
+                'name' => 'Prima Bangunan',
+                'timezone' => 'Asia/Jakarta',
+            ]);
+        }
 
-        return redirect()->route('auth.otp-verify')
-            ->with('success', 'Registration successful! Please verify your email with OTP.');
+        Auth::login($user);
+
+        return redirect()->route('dashboard')->with('success', 'Pendaftaran berhasil! Selamat datang di Prima Bangunan.');
     }
 
     public function login(Request $request)
@@ -53,32 +66,26 @@ class AuthController extends Controller
             'password' => 'required'
         ]);
 
-        if (Auth::attempt($credentials)) {
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $user = Auth::user();
 
             if ($user->status !== 'verified') {
-                // Reset session (Logout paksa)
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
 
                 return back()->withErrors([
-                    'email' => 'Your account is not verified. Please check your email for the OTP.'
+                    'email' => 'Akun Anda belum aktif. Hubungi administrator.'
                 ])->onlyInput('email');
-            }
-
-            if (!$user->otp_verified) {
-                return redirect()->route('auth.otp-verify')
-                    ->with('error', 'Your account is not verified. Please check your email for the OTP.');
             }
 
             $request->session()->regenerate();
 
-            return redirect('/');
+            return redirect()->intended(route('dashboard'));
         }
 
         return back()->withErrors([
-            'email' => 'Email atau password salah'
+            'email' => 'Email atau kata sandi tidak cocok dengan data kami.'
         ])->onlyInput('email');
     }
 
@@ -89,6 +96,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect('/login')->with('success', 'You have been logged out successfully.');
+        return redirect()->route('login')->with('success', 'Anda telah berhasil keluar.');
     }
 }

@@ -4,364 +4,236 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title')</title>
+    <title>@yield('title', 'Prima Bangunan')</title>
+
+    <!-- Bootstrap 5 & Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
-        :root { --main-blue: #0D6EFD; }
-        body { background-color: #FAFAFA; font-family: 'Inter', sans-serif; }
-        .d-flex {
-            align-items: flex-start !important;
+        :root {
+            --bs-primary: #2563EB;
+            --bs-primary-rgb: 37, 99, 235;
+            --sidebar-bg: #1E293B;
+            --bg-canvas: #F8FAFC;
         }
-        .flex-grow-1 {
+
+        body {
+            background-color: var(--bg-canvas);
+            font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+            color: #1E293B;
+            min-height: 100vh;
+        }
+
+        .sidebar-desktop {
+            width: 250px;
+            min-height: 100vh;
+            background: var(--sidebar-bg);
+            color: white;
+            position: sticky;
+            top: 0;
+            flex-shrink: 0;
+            z-index: 1020;
+        }
+
+        .flex-main-content {
+            flex: 1;
             min-width: 0;
-            width: calc(100% - 260px);
-        }
-        .container-fluid {
-            overflow-x: hidden;
-        }
-        .row.g-4 {
-            margin-right: 0;
-            margin-left: 0;
-        }
-        
-        /* Sidebar Desktop */
-        .sidebar-desktop { width: 200px; min-height: 100vh; background: var(--main-blue); color: white; position: sticky; top: 0; }
-        
-        /* Sidebar Offcanvas (Mobile) */
-        .offcanvas { background: var(--main-blue); color: white; width: 280px !important; }
-        
-        .nav-link { color: rgba(255,255,255,0.8); transition: 0.3s; border-radius: 8px; margin-bottom: 5px; }
-        .nav-link:hover, .nav-link.active { color: white; background: rgba(255,255,255,0.15); }
-        /* .card { 
-            border: 1px solid #dee2e6; 
-            border-radius: 12px; 
-            background: white; 
-            padding: 15px; 
-            box-sizing: border-box;
-            overflow: hidden;
-        } */
-
-        .card{
-            background:#fff;
-            border:none;
-            border-radius:24px;
-            box-shadow:0 10px 35px rgba(0,0,0,.05);
-            padding:24px;
-            transition: .25s;
+            width: calc(100% - 250px);
         }
 
-        .info-card{
-            background:#F8FAFC;
-            border:1px solid #E5E7EB;
-            border-radius:16px;
-            transition:.2s;
-        }
-
-        .info-card:hover{
-            background:#F1F5F9;
-        }
-
-        .image-wrapper{
-            background:#F8FAFC;
-            border-radius:24px;
-            overflow:hidden;
-
-            aspect-ratio:1/1;
-
-            display:flex;
-            align-items:center;
-            justify-content:center;
-
-            padding:24px;
-        }
-
-        .item-image{
-            width:100%;
-            height:100%;
-            object-fit:contain;
-        }
-
-        .border {
-                border-color: #eef2f7 !important;
+        @media (max-width: 991.98px) {
+            .flex-main-content {
+                width: 100%;
             }
-
-        .bg-light {
-            background: #f8fafc !important;
         }
 
-        .card-body h2 {
-            letter-spacing: -.03em;
+        .offcanvas {
+            background: var(--sidebar-bg);
+            color: white;
+            width: 270px !important;
         }
 
-        .card img{
-            width:100%;
-            height:100%;
-            max-height:380px;
-            object-fit:cover;
-            border-radius:20px;
-        }
-
-        .item-card {
-            border-radius: 16px;
-            overflow: hidden;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            background: #ffffff;
-            border: 1px solid #F1F5F9 !important;
-        }
-
-
-        .item-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12) !important;
-        }
-
-
-        .item-image-wrapper {
-            background: white;
-        }
-
-        .stock-status {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-
-            padding: 6px 10px;
-
-            border-radius: 999px;
-
-            font-size: 12px;
-            font-weight: 600;
-
-            margin-bottom: 8px;
-
-            backdrop-filter: blur(8px);
-        }
-
-
-        .stock-danger {
-            color: #DC2626;
-            background: rgba(254, 226, 226, 0.9);
-            border: 1px solid #FECACA;
-        }
-        
-        
-        .stock-warning {
-            color: #D97706;
-            background: rgba(254, 243, 199, 0.9);
-            border: 1px solid #FDE68A;
-        }
-
-        .item-image {
-            height: 160px;
-            width: 100%;
-            object-fit: cover;
-            border-radius: 12px;
-        }
-
-
-        .item-title {
-            font-size: 18px;
-            color: #111827;
-            line-height: 1.4;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-
-        .item-stock {
-            font-size: 14px;
-        }
-
-
-        .item-price {
-            font-size: 20px;
-            font-weight: 700;
-            color: #2563EB;
-            margin-top: 8px;
-        }
-
-
-        .item-reseller {
+        .nav-link {
+            color: #94A3B8;
+            transition: all 0.2s ease;
+            border-radius: 10px;
             font-size: 14px;
             font-weight: 500;
-            color: #16A34A;
-            margin-top: 4px;
         }
 
-        /* BASE BUTTON */
-        .btn-soft {
+        .nav-link:hover {
+            color: #FFFFFF;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .nav-link.active {
+            color: #FFFFFF !important;
+            background: var(--bs-primary) !important;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+        }
+
+        .card-custom {
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        .card-custom:hover {
+            border-color: #CBD5E1;
+        }
+
+        .btn-primary-custom {
+            background-color: #2563EB;
+            border-color: #2563EB;
+            color: #FFFFFF;
             font-weight: 600;
-            border-radius: 8px;
-            transition: all 0.2s ease;
-            border-width: 1px;
-            cursor: pointer;
+            border-radius: 10px;
+            padding: 8px 16px;
+            transition: all 0.2s;
         }
 
-        .btn-soft:hover {
-            transform: translateY(-1px);
+        .btn-primary-custom:hover {
+            background-color: #1D4ED8;
+            border-color: #1D4ED8;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
         }
 
-        .btn-soft:active {
-            transform: translateY(0);
-        }
-
-        .btn-soft:focus,
-        .btn-soft:active,
-        .btn-soft:focus-visible {
-            outline: none !important;
-            box-shadow: none !important;
-        }
-
-
-        /* DELETE */
-        .btn-delete-hover {
-            color: #DC2626;
-            background: rgba(220, 53, 69, 0.1);
-            border-color: rgba(220, 53, 69, 0.1);
-            transition: all 0.2s ease;
-        }
-
-        .btn-delete-hover:hover,
-        .btn-delete-hover:focus,
-        .btn-delete-hover:active {
-            color: #B91C1C !important;
-            background: rgba(220, 53, 69, 0.18) !important;
-            border-color: rgba(220, 53, 69, 0.25) !important;
-            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.15) !important;
-        }
-
-
-        /* PRIMARY */
-        .btn-primary-soft {
-            color: #2563EB;
-            background-color: #DBEAFE;
-            border-color: #DBEAFE;
-        }
-
-        .btn-primary-soft:hover,
-        .btn-primary-soft:focus,
-        .btn-primary-soft:active {
-            color: #1D4ED8 !important;
-            background-color: #BFDBFE !important;
-            border-color: #BFDBFE !important;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15) !important;
-        }
-
-
-        /* WARNING */
-        .btn-warning-soft {
-            color: #D97706;
-            background-color: #FEF3C7;
-            border-color: #FEF3C7;
-        }
-
-        .btn-warning-soft:hover,
-        .btn-warning-soft:focus,
-        .btn-warning-soft:active {
-            color: #B45309 !important;
-            background-color: #FDE68A !important;
-            border-color: #FDE68A !important;
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15) !important;
-        }
-
-
-        /* DANGER */
-        .btn-danger-soft {
-            color: #DC2626;
-            background-color: #FEE2E2;
-            border-color: #FEE2E2;
-        }
-
-        .btn-danger-soft:hover,
-        .btn-danger-soft:focus,
-        .btn-danger-soft:active {
-            color: #B91C1C !important;
-            background-color: #FECACA !important;
-            border-color: #FECACA !important;
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15) !important;
-        }
-
-        /* SECONDARY */
-        .btn-secondary-soft {
-            color: #4B5563;
-            background-color: #F3F4F6;
-            border-color: #F3F4F6;
-        }
-
-        .btn-secondary-soft:hover,
-        .btn-secondary-soft:focus,
-        .btn-secondary-soft:active {
-            color: #374151 !important;
-            background-color: #E5E7EB !important;
-            border-color: #E5E7EB !important;
-            box-shadow: 0 4px 12px rgba(75, 85, 99, 0.15) !important;
-        }
-        /* Success */
-        .badge-soft-success {
-            background-color: #DCFCE7 !important;
-            color: #16A34A !important;
+        /* Badges */
+        .badge-lunas {
+            background-color: #DCFCE7;
+            color: #15803D;
             border: 1px solid #BBF7D0;
             font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 8px;
         }
 
-        /* Primary */
-        .badge-soft-primary {
-            background-color: #DBEAFE !important;
-            color: #2563EB !important;
-            border: 1px solid #BFDBFE;
-            font-weight: 600;
-        }
-
-        /* Warning */
-        .badge-soft-warning {
-            background-color: #FEF3C7 !important;
-            color: #F59E0B !important;
+        .badge-sebagian {
+            background-color: #FEF3C7;
+            color: #B45309;
             border: 1px solid #FDE68A;
             font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 8px;
         }
 
-        /* Danger */
-        .badge-soft-danger {
-            background-color: #FEE2E2 !important;
-            color: #EF4444 !important;
+        .badge-belum-bayar {
+            background-color: #FEE2E2;
+            color: #B91C1C;
             border: 1px solid #FECACA;
             font-weight: 600;
+            padding: 5px 10px;
+            border-radius: 8px;
+        }
+
+        .badge-jatuh-tempo {
+            background-color: #7F1D1D;
+            color: #FEE2E2;
+            border: 1px solid #991B1B;
+            font-weight: 700;
+            padding: 5px 10px;
+            border-radius: 8px;
+            animation: pulse-border 2s infinite;
+        }
+
+        @keyframes pulse-border {
+            0% { opacity: 1; }
+            50% { opacity: 0.85; }
+            100% { opacity: 1; }
+        }
+
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 1px solid #CBD5E1;
+            padding: 9px 14px;
+            font-size: 14px;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #2563EB;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
         }
     </style>
+    @stack('styles')
 </head>
 <body>
     <div class="d-flex">
-        
-        <aside class="sidebar-desktop px-3 py-4 d-none d-lg-block shadow">
+        <!-- Sidebar Desktop -->
+        <aside class="sidebar-desktop px-3 py-4 d-none d-lg-block">
             @include('partials.sidebar-content')
         </aside>
 
-        <div class="flex-grow-1">
-            <nav class="navbar navbar-expand-lg bg-white border-bottom d-lg-none p-3">
-                <div class="container-fluid">
-                    <button class="btn-toggle-sidebar" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar">
-                        <i class="bi bi-list fs-4"></i>
+        <!-- Main Content Area -->
+        <div class="flex-main-content d-flex flex-column min-vh-100">
+            <!-- Mobile Topbar -->
+            <nav class="navbar navbar-expand-lg bg-white border-bottom d-lg-none px-3 py-2 sticky-top shadow-sm">
+                <div class="container-fluid p-0">
+                    <button class="btn btn-outline-secondary border-0 p-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar">
+                        <i class="bi bi-list fs-3"></i>
                     </button>
-                    <span class="fw-bold ms-2">Prima Bangunan</span>
+                    <span class="fw-bold text-dark ms-2 fs-5">Prima Bangunan</span>
+                    <div class="ms-auto d-flex align-items-center">
+                        <span class="badge bg-primary-subtle text-primary fw-medium px-2 py-1 rounded-pill">
+                            <i class="bi bi-person-circle me-1"></i> {{ auth()->user()->name ?? 'Kasir' }}
+                        </span>
+                    </div>
                 </div>
             </nav>
 
-            <main class="p-4">
+            <!-- Main Body -->
+            <main class="p-3 p-md-4 flex-grow-1">
+                {{-- Flash Notifications --}}
+                @if(session('success'))
+                    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-3 d-flex align-items-center" role="alert">
+                        <i class="bi bi-check-circle-fill fs-5 me-2 text-success"></i>
+                        <div>{{ session('success') }}</div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
+
+                @if(session('error'))
+                    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm rounded-3 d-flex align-items-center" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill fs-5 me-2 text-danger"></i>
+                        <div>{{ session('error') }}</div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
+
+                @if($errors->any())
+                    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm rounded-3" role="alert">
+                        <div class="fw-bold mb-1"><i class="bi bi-exclamation-circle-fill me-1"></i> Terdapat kesalahan pada input:</div>
+                        <ul class="mb-0 ps-3">
+                            @foreach($errors->all() as $err)
+                                <li>{{ $err }}</li>
+                            @endforeach
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
+
                 @yield('content')
             </main>
+
+            <!-- Footer -->
+            <footer class="bg-white border-top py-3 px-4 text-muted small d-flex flex-wrap justify-content-between align-items-center mt-auto">
+                <div>&copy; {{ date('Y') }} <strong>Prima Bangunan</strong> — Sistem Manajemen Toko Bahan Bangunan & POS</div>
+                <div class="text-secondary">Waktu Sistem: <span class="fw-semibold">{{ date('d M Y, H:i') }}</span> ({{ config('app.timezone', 'Asia/Jakarta') }})</div>
+            </footer>
         </div>
     </div>
 
+    <!-- Mobile Offcanvas Sidebar -->
     <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
-        <div class="offcanvas-header border-bottom border-white border-opacity-10">
-            <h5 class="offcanvas-title fw-bold" id="mobileSidebarLabel">Prima Bangunan</h5>
+        <div class="offcanvas-header border-bottom border-secondary border-opacity-25 py-3">
+            <h6 class="offcanvas-title text-white fw-bold" id="mobileSidebarLabel">Prima Bangunan</h6>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body p-3">
@@ -369,6 +241,19 @@
         </div>
     </div>
 
+    <!-- Bootstrap Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Global Debounce & Search Optimizer Script -->
+    <script>
+        function debounce(func, wait = 300) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+    </script>
+    @stack('scripts')
 </body>
 </html>

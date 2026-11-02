@@ -4,24 +4,27 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class InvoiceDetail extends Model
 {
-    /** @use HasFactory<\Database\Factories\InvoiceDetailFactory> */
     use HasFactory;
-    use HasUuids;
-
-    protected $keyType = 'string';
-    public $incrementing = false;
 
     protected $fillable = [
         'invoice_id',
         'item_id',
         'quantity',
-        'unit_price',
+        'price',
         'sub_total',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'quantity' => 'integer',
+            'price' => 'decimal:2',
+            'sub_total' => 'decimal:2',
+        ];
+    }
 
     public function invoice()
     {

@@ -1,543 +1,293 @@
 @extends('layouts.app')
 
-@section('title', 'Daftar Barang')
+@section('title', 'Katalog Barang & Stok — Prima Bangunan')
 
 @section('content')
-
-<div class="container-fluid px-4">
-
-    <!-- HEADER -->
-    <div class="d-sm-flex align-items-center justify-content-between mb-4 mt-3">
-        <h1 class="m-0 h4 text-dark fw-bold">Daftar Barang</h1>
-
-        <button class="btn btn-primary-soft" data-bs-toggle="modal" data-bs-target="#itemModal">
-            <i class="bi bi-plus-lg me-1"></i> Tambah Barang
-        </button>
-    </div>
-
-    <!-- FILTER -->
-    <div class="card p-3 mb-4 overflow-visible">
-        <div class="row g-3">
-
-            <div class="col-md-4">
-                <input type="text" id="searchInput" class="form-control" placeholder="Cari nama barang...">
-            </div>
-
-            <div class="col-md-4 position-relative">
-                <input type="text" id="categorySearch" class="form-control" placeholder="Pilih / cari kategori...">
-
-                <div id="categoryDropdown"
-                     class="list-group position-absolute w-100 mt-1 d-none"
-                     style="z-index:1000; max-height:200px; overflow-y:auto;">
-                </div>
-            </div>
-
-            <div class="col-md-4 position-relative">
-                <input type="text" id="brandSearch" class="form-control" placeholder="Pilih / cari brand...">
-
-                <div id="brandDropdown"
-                     class="list-group position-absolute w-100 mt-1 d-none"
-                     style="z-index:1000; max-height:200px; overflow-y:auto;">
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <select id="stockFilter" class="form-select">
-                    <option value="">Semua Stok</option>
-                    <option value="empty">Stock Habis</option>
-                    <option value="low">Stock Menipis (&lt;10 pcs)</option>
-                </select>
-            </div>
-
-            <div class="col-md-4 d-flex align-items-end">
-                <button onclick="resetFilter()" class="btn btn-secondary-soft border w-100">
-                    <i class="bi bi-arrow-counterclockwise me-1"></i>
-                    Reset Filter
-                </button>
-            </div>
-
+<div class="container-fluid p-0">
+    <!-- Header -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+        <div>
+            <h4 class="fw-bold mb-1 text-dark">Katalog Barang & Stok Material</h4>
+            <p class="text-muted small mb-0">Kelola stok barang, harga eceran (orang), harga grosir (retail), dan relasi supplier.</p>
+        </div>
+        <div>
+            <button type="button" class="btn btn-primary-custom d-flex align-items-center shadow-sm" data-bs-toggle="modal" data-bs-target="#modalTambahBarang">
+                <i class="bi bi-plus-lg me-2"></i> Tambah Barang Baru
+            </button>
         </div>
     </div>
 
-    <!-- ITEM GRID -->
-    <div class="row g-4" id="itemContainer"></div>
+    <!-- Search & Filter Bar -->
+    <div class="card card-custom p-3 mb-4">
+        <form method="GET" action="{{ route('item.index') }}" id="filterForm">
+            <div class="row g-2 align-items-center">
+                <!-- Search Input with Debounce -->
+                <div class="col-12 col-md-5">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-muted">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text"
+                               name="q"
+                               id="searchInput"
+                               value="{{ request('q') }}"
+                               placeholder="Cari nama, merek, kata kunci (mis. 'pom' untuk pompa)..."
+                               class="form-control border-start-0 ps-0"
+                               autocomplete="off">
+                    </div>
+                </div>
+
+                <!-- Filter Kategori -->
+                <div class="col-6 col-md-3">
+                    <select name="category_id" id="categoryFilter" class="form-select">
+                        <option value="">Semua Kategori</option>
+                        @foreach($categories as $cat)
+                            <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>
+                                {{ $cat->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <!-- Filter Status Stok -->
+                <div class="col-6 col-md-3">
+                    <select name="stock_status" id="stockFilter" class="form-select">
+                        <option value="">Semua Status Stok</option>
+                        <option value="available" {{ request('stock_status') === 'available' ? 'selected' : '' }}>Tersedia (> 10)</option>
+                        <option value="low" {{ request('stock_status') === 'low' ? 'selected' : '' }}>Menipis (1 - 10)</option>
+                        <option value="out" {{ request('stock_status') === 'out' ? 'selected' : '' }}>Habis (0)</option>
+                    </select>
+                </div>
+
+                <!-- Reset / Submit Buttons -->
+                <div class="col-12 col-md-1 d-flex gap-1">
+                    @if(request()->anyFilled(['q', 'category_id', 'stock_status']))
+                        <a href="{{ route('item.index') }}" class="btn btn-outline-secondary w-100" title="Reset Filter">
+                            <i class="bi bi-x-lg"></i>
+                        </a>
+                    @endif
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Grid Barang -->
+    <div class="row g-3" id="itemsGrid">
+        @forelse($items as $item)
+        <div class="col-12 col-sm-6 col-md-4 col-xl-3">
+            <div class="card card-custom h-100 d-flex flex-column p-3 position-relative">
+                <!-- Image Container -->
+                <div class="rounded-3 bg-light overflow-hidden mb-3 d-flex align-items-center justify-content-center" style="height: 160px;">
+                    @if($item->image_url)
+                        <img src="{{ $item->image_url }}" alt="{{ $item->name }}" class="w-100 h-100 object-fit-cover">
+                    @else
+                        <div class="text-secondary opacity-50 text-center">
+                            <i class="bi bi-box-seam fs-1"></i>
+                            <div class="small mt-1">No Image</div>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Kategori & Brand -->
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 11px;">
+                        {{ $item->category->name ?? 'Material Umum' }}
+                    </span>
+                    @if($item->brand)
+                        <small class="text-muted fw-semibold">{{ $item->brand }}</small>
+                    @endif
+                </div>
+
+                <!-- Nama Barang -->
+                <h6 class="fw-bold text-dark mb-2 text-truncate-2" style="min-height: 40px;" title="{{ $item->name }}">
+                    <a href="{{ route('item.show', $item->id) }}" class="text-dark text-decoration-none hover-primary">
+                        {{ $item->name }}
+                    </a>
+                </h6>
+
+                <!-- Stok Badge -->
+                <div class="mb-3">
+                    @if($item->stock <= 0)
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                            <i class="bi bi-x-circle me-1"></i> Stok Habis (0)
+                        </span>
+                    @elseif($item->stock <= 10)
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
+                            <i class="bi bi-exclamation-circle me-1"></i> Stok Sisa {{ $item->stock }}
+                        </span>
+                    @else
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                            <i class="bi bi-check-circle me-1"></i> Stok {{ $item->stock }} unit
+                        </span>
+                    @endif
+                </div>
+
+                <!-- Pricing Information (Orang vs Retail) -->
+                <div class="mt-auto pt-2 border-top">
+                    <div class="d-flex justify-content-between align-items-baseline mb-1">
+                        <small class="text-muted" style="font-size: 11px;">Harga Orang (Eceran):</small>
+                        <span class="fw-bold text-primary">Rp {{ number_format($item->price, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-baseline mb-3">
+                        <small class="text-muted" style="font-size: 11px;">Harga Retail (Grosir):</small>
+                        <span class="fw-semibold text-success">Rp {{ number_format($item->retail_price, 0, ',', '.') }}</span>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="d-grid gap-2">
+                        <a href="{{ route('item.show', $item->id) }}" class="btn btn-sm btn-outline-primary rounded-pill fw-semibold">
+                            <i class="bi bi-info-circle me-1"></i> Detail & Harga Supplier
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @empty
+        <div class="col-12">
+            <div class="card card-custom text-center py-5">
+                <i class="bi bi-search fs-1 text-secondary opacity-50 mb-3"></i>
+                <h5 class="fw-bold text-dark">Barang tidak ditemukan</h5>
+                <p class="text-muted mb-3">Coba gunakan kata kunci pencarian lain atau hilangkan filter yang aktif.</p>
+                <div>
+                    <a href="{{ route('item.index') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-4">
+                        Reset Pencarian
+                    </a>
+                </div>
+            </div>
+        </div>
+        @endforelse
+    </div>
+
+    <!-- Pagination -->
+    <div class="mt-4 d-flex justify-content-center">
+        {{ $items->links('pagination::bootstrap-5') }}
+    </div>
 </div>
 
-{{-- MODAL --}}
-<div class="modal fade" id="itemModal">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-
-            <div class="modal-header">
-                <h5 class="modal-title">Tambah Barang</h5>
-                <button class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-
-            <div class="modal-body">
-                {{-- Toast --}}
-                <div id="formAlert" class="alert d-none py-2 small"></div>
-
-                {{-- Form --}}
-                <form id="itemForm" enctype="multipart/form-data">
-                    @csrf
-                    
+<!-- Modal Tambah Barang Baru -->
+<div class="modal fade" id="modalTambahBarang" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <form action="{{ route('item.store') }}" method="POST">
+                @csrf
+                <div class="modal-header border-bottom py-3 px-4">
+                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-box-seam me-2 text-primary"></i> Tambah Barang Material Baru</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
                     <div class="row g-3">
-
-                        <!-- REQUIRED -->
-                        <div class="col-md-6">
-                            <label>Nama <span class="text-danger">*</span></label>
-                            <input type="text" name="name" class="form-control" required>
+                        <div class="col-12 col-md-8">
+                            <label class="form-label small fw-semibold text-dark">Nama Barang <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" placeholder="Contoh: Semen Gresik 50kg, Pipa PVC 2 inch" required>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label small fw-semibold text-dark">Merek / Brand</label>
+                            <input type="text" name="brand" class="form-control" placeholder="Contoh: Rucika, Avian, Shimizu">
                         </div>
 
-                        <!-- REQUIRED -->
-                        <div class="col-md-6">
-                            <label>Brand <span class="text-danger">*</span></label>
-                            <input type="text" name="brand" class="form-control" required>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-dark">Kategori</label>
+                            <select name="category_id" class="form-select">
+                                <option value="">Pilih Kategori...</option>
+                                @foreach($categories as $cat)
+                                    <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-dark">Stok Awal <span class="text-danger">*</span></label>
+                            <input type="number" name="stock" class="form-control" min="0" value="0" required>
                         </div>
 
-                        <!-- REQUIRED -->
-                        <div class="col-md-6">
-                            <label>Kategori <span class="text-danger">*</span></label>
-                            <select name="category_id" id="categorySelect" class="form-select" required></select>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-dark">Harga Eceran ("Orang") <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">Rp</span>
+                                <input type="number" name="price" class="form-control" min="0" placeholder="0" required>
+                            </div>
+                            <small class="text-muted" style="font-size: 11px;">Harga yang otomatis dikenakan untuk pelanggan biasa (orang).</small>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-dark">Harga Grosir ("Retail") <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">Rp</span>
+                                <input type="number" name="retail_price" class="form-control" min="0" placeholder="0" required>
+                            </div>
+                            <small class="text-muted" style="font-size: 11px;">Harga yang otomatis dikenakan untuk pelanggan toko/retail.</small>
                         </div>
 
-                        <!-- OPTIONAL -->
-                        <div class="col-md-6">
-                            <label>Stock <span class="text-secondary">(opsional)</span></label>
-                            <input type="number" name="stock" class="form-control" value="0">
-                        </div>
-
-                        <!-- OPTIONAL -->
-                        <div class="col-md-6">
-                            <label>Harga <span class="text-secondary">(opsional)</span></label>
-                            <input type="number" name="price" class="form-control" value="0">
-                        </div>
-
-                        <!-- OPTIONAL -->
-                        <div class="col-md-6">
-                            <label>Harga Reseller <span class="text-secondary">(opsional)</span></label>
-                            <input type="number" name="reseller_price" class="form-control" value="0">
-                        </div>
-
-                        <!-- OPTIONAL -->
                         <div class="col-12">
-                            <label>Deskripsi <span class="text-secondary">(opsional)</span></label>
-                            <textarea name="description" class="form-control"></textarea>
+                            <label class="form-label small fw-semibold text-dark">URL Gambar (Opsional)</label>
+                            <input type="url" name="image_url" class="form-control" placeholder="https://example.com/foto-barang.jpg">
                         </div>
 
-                        <!-- OPTIONAL -->
                         <div class="col-12">
-                            <label>Gambar <span class="text-secondary">(opsional)</span></label>
-                            <input type="file" name="image" class="form-control" accept="image/*">
+                            <label class="form-label small fw-semibold text-dark">Deskripsi & Spesifikasi</label>
+                            <textarea name="description" rows="2" class="form-control" placeholder="Spesifikasi ukuran, fungsi, dsb."></textarea>
                         </div>
 
+                        <hr class="my-3">
+                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-truck me-1 text-primary"></i> Data Supplier Utama (Opsional)</h6>
+
+                        <div class="col-12 col-md-4">
+                            <label class="form-label small fw-semibold text-dark">Supplier</label>
+                            <select name="supplier_id" class="form-select">
+                                <option value="">Belum Ditentukan</option>
+                                @foreach($suppliers as $sup)
+                                    <option value="{{ $sup->id }}">{{ $sup->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label small fw-semibold text-dark">Harga Beli Satuan (Unit Price)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">Rp</span>
+                                <input type="number" name="unit_price" class="form-control" min="0" placeholder="0">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label small fw-semibold text-dark">Harga Beli Per Lusin (Lusin Price)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">Rp</span>
+                                <input type="number" name="lusin_price" class="form-control" min="0" placeholder="0">
+                            </div>
+                        </div>
                     </div>
-
-                </form>
-            </div>
-
-            <div class="modal-footer">
-                <button class="btn btn-secondary-soft" data-bs-dismiss="modal">Batal</button>
-                <button type="button" onclick="submitItem()" class="btn btn-primary-soft">Simpan</button>
-            </div>
-
+                </div>
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary-custom rounded-pill px-4">Simpan Barang</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
-
-<!-- ================= TOAST ================= -->
-<div class="position-fixed top-0 end-0 p-4" style="z-index:9999">
-    <div id="successToast" class="toast border-0 shadow-lg">
-        <div class="d-flex align-items-center p-3 bg-primary text-white rounded">
-
-            <i class="bi bi-check-circle-fill fs-3 me-3"></i>
-
-            <div>
-                <div class="fw-bold fs-5">Berhasil 🎉</div>
-                <div>Tambah barang berhasil!</div>
-            </div>
-
-        </div>
-    </div>
-</div>
-
-<script>
-let debounceTimer;
-let selectedCategory = "";
-let selectedBrand = "";
-let fetchInterval = null;
-
-/* ================= FETCH ITEMS ================= */
-function fetchItems() {
-    const search = document.getElementById("searchInput").value;
-    const stock = document.getElementById("stockFilter").value;
-
-    fetch(`/api/items?search=${encodeURIComponent(search)}&category=${encodeURIComponent(selectedCategory)}&brand=${encodeURIComponent(selectedBrand)}&stock=${stock}`)
-        .then(res => res.json())
-        .then(data => renderItems(data))
-        .catch(error => console.error('Error fetching items:', error));
-}
-
-/* ================= DEBOUNCE ================= */
-function debounceFetch() {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(fetchItems, 500);
-}
-
-/* ================= EVENTS ================= */
-document.getElementById("searchInput").addEventListener("input", debounceFetch);
-document.getElementById("stockFilter").addEventListener("change", fetchItems);
-const itemModalElement = document.getElementById('itemModal')
-
-itemModalElement.addEventListener('show.bs.modal', loadCategorySelect);
-
-itemModalElement.addEventListener('hide.bs.modal', function () {
-    setTimeout(() => {
-        if (document.activeElement) {
-            document.activeElement.blur();
-        }
-    }, 0);
-});
-
-// Reset modal saat ditutup
-document.getElementById('itemModal').addEventListener('hidden.bs.modal', function() {
-    document.getElementById('itemForm').reset();
-});
-
-/* ================= CATEGORY ================= */
-const categoryInput = document.getElementById("categorySearch");
-const categoryDropdown = document.getElementById("categoryDropdown");
-
-function loadCategories(keyword = "") {
-    fetch(`/api/categories?search=${keyword}`)
-        .then(res => res.json())
-        .then(data => {
-            categoryDropdown.innerHTML = "";
-
-            data.forEach(cat => {
-                categoryDropdown.innerHTML += `
-                    <button type="button" class="list-group-item list-group-item-action"
-                        onclick="selectCategory('${cat.name}')">
-                        ${cat.name}
-                    </button>
-                `;
-            });
-
-            categoryDropdown.classList.remove("d-none");
-        });
-}
-
-categoryInput.addEventListener("focus", () => loadCategories(""));
-categoryInput.addEventListener("input", function () {
-    loadCategories(this.value);
-});
-
-function selectCategory(name) {
-    selectedCategory = name;
-    categoryInput.value = name;
-    categoryDropdown.classList.add("d-none");
-    fetchItems();
-}
-
-/* ================= BRAND ================= */
-const brandInput = document.getElementById("brandSearch");
-const brandDropdown = document.getElementById("brandDropdown");
-
-function loadBrands(keyword = "") {
-    fetch(`/api/brands?search=${keyword}`)
-        .then(res => res.json())
-        .then(data => {
-            brandDropdown.innerHTML = "";
-
-            data.forEach(brand => {
-                brandDropdown.innerHTML += `
-                    <button type="button" class="list-group-item list-group-item-action"
-                        onclick="selectBrand('${brand}')">
-                        ${brand}
-                    </button>
-                `;
-            });
-
-            brandDropdown.classList.remove("d-none");
-        });
-}
-
-brandInput.addEventListener("focus", () => loadBrands(""));
-brandInput.addEventListener("input", function () {
-    loadBrands(this.value);
-});
-
-function selectBrand(name) {
-    selectedBrand = name;
-    brandInput.value = name;
-    brandDropdown.classList.add("d-none");
-    fetchItems();
-}
-
-/* ================= CLICK OUTSIDE ================= */
-document.addEventListener("click", function (e) {
-    if (
-        categoryInput && !categoryInput.contains(e.target) &&
-        categoryDropdown && !categoryDropdown.contains(e.target) &&
-        brandInput && !brandInput.contains(e.target) &&
-        brandDropdown && !brandDropdown.contains(e.target)
-    ) {
-        if(categoryDropdown) categoryDropdown.classList.add("d-none");
-        if(brandDropdown) brandDropdown.classList.add("d-none");
-    }
-});
-
-/* ================= RESET ================= */
-function resetFilter() {
-    document.getElementById("searchInput").value = "";
-    document.getElementById("categorySearch").value = "";
-    document.getElementById("brandSearch").value = "";
-    document.getElementById("stockFilter").value = "";
-
-    selectedCategory = "";
-    selectedBrand = "";
-
-    if(categoryDropdown) categoryDropdown.classList.add("d-none");
-    if(brandDropdown) brandDropdown.classList.add("d-none");
-
-    fetchItems();
-}
-
-/* ================= RENDER ================= */
-function renderItems(items) {
-    const container = document.getElementById("itemContainer");
-    container.innerHTML = "";
-
-    if (!items || items.length === 0) {
-        container.innerHTML = `
-        <div class="col-12 text-center py-5">
-            <div class="text-muted">
-                <i class="bi bi-inbox fs-1 mb-3 d-block"></i>
-                <p class="mb-0 fw-semibold">Tidak ada data</p>
-                <small>Coba ubah filter atau kata pencarian</small>
-            </div>
-        </div>
-        `;
-        return;
-    }
-
-    items.forEach(item => {
-        // Handle image URL dengan lebih baik
-        let imageUrl = item.image;
-        if (!imageUrl || imageUrl === '' || imageUrl === 'null') {
-             imageUrl = '{{ asset('image.png') }}';
-        }
-        
-        // Pastikan URL valid
-        if (imageUrl && !imageUrl.startsWith('http') && !imageUrl.startsWith('/')) {
-            imageUrl = '/' + imageUrl;
-        }
-
-        let stockLabel = "";
-
-        if (item.stock === 0) {
-            stockLabel = `
-            <div class="stock-status stock-danger">
-                <i class="bi bi-x-circle-fill"></i>
-                Habis
-            </div>`;
-        } 
-        else if (item.stock < 10) {
-            stockLabel = `
-            <div class="stock-status stock-warning">
-                <i class="bi bi-exclamation-circle-fill"></i>
-                Menipis
-            </div>`;
-        }
-
-        container.innerHTML += `
-        <div class="col-12 col-sm-6 col-md-4">
-            <div class="card item-card h-100 border-0 shadow-sm position-relative"
-                onclick="window.location.href='/items/${item.id}'">
-
-                ${stockLabel}
-
-                <div class="item-image-wrapper">
-                    <img src="${imageUrl}" 
-                        class="card-img-top item-image"
-                        alt="${item.name}"
-                        onerror="this.src='{{ asset('image.png') }}'">
-                </div>
-
-                <div class="card-body p-3">
-
-                    <div class="d-flex flex-wrap gap-1 mb-2">
-                        <span class="badge badge-soft-primary">
-                            ${escapeHtml(item.category)}
-                        </span>
-
-                        <span class="badge badge-soft-secondary">
-                            ${escapeHtml(item.brand)}
-                        </span>
-                    </div>
-
-
-                    <h6 class="fw-semibold mb-2 item-title">
-                        ${escapeHtml(item.name)}
-                    </h6>
-
-
-                    <div class="d-flex align-items-center gap-2 mb-2 text-muted item-stock">
-                        <span>
-                            Stock <b class="text-dark">${item.stock}</b>
-                        </span>
-                    </div>
-
-
-                    <div class="item-price">
-                        Rp ${formatNumber(item.price)}
-                    </div>
-
-
-                    <div class="item-reseller">
-                        Reseller Rp ${formatNumber(item.reseller_price)}
-                    </div>
-
-                </div>
-
-            </div>
-        </div>
-        `;
-    });
-}
-
-// Helper function untuk format number
-function formatNumber(num) {
-    if (!num && num !== 0) return '0';
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-}
-
-// Helper function untuk prevent XSS
-function escapeHtml(str) {
-    if (!str) return '';
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
-
-/* ================= TOAST ================= */
-function showSuccessToast() {
-    const toastEl = document.getElementById('successToast');
-    const toast = new bootstrap.Toast(toastEl, { delay: 2500 });
-    toast.show();
-}
-
-/* ================= SUBMIT ================= */
-function submitItem() {
-    const form = document.getElementById("itemForm");
-    const formData = new FormData(form);
-
-    const name = formData.get("name");
-    const brand = formData.get("brand");
-    const category = formData.get("category_id");
-
-    const alertBox = document.getElementById("formAlert");
-
-    // reset state
-    alertBox.classList.add("d-none");
-    form.querySelectorAll(".form-control, .form-select").forEach(el => {
-        el.classList.remove("is-invalid");
-    });
-
-    let errors = [];
-
-    if (!name) {
-        errors.push("Nama wajib diisi");
-        form.querySelector('[name="name"]').classList.add("is-invalid");
-    }
-
-    if (!brand) {
-        errors.push("Brand wajib diisi");
-        form.querySelector('[name="brand"]').classList.add("is-invalid");
-    }
-
-    if (!category) {
-        errors.push("Kategori wajib dipilih");
-        form.querySelector('[name="category_id"]').classList.add("is-invalid");
-    }
-
-    if (errors.length > 0) {
-        alertBox.className = "alert alert-danger";
-        alertBox.innerHTML = errors.join("<br>");
-        alertBox.classList.remove("d-none");
-        return;
-    }
-
-    const btn = document.querySelector('#itemModal .btn-primary-soft');
-    btn.disabled = true;
-    btn.innerHTML = "Menyimpan...";
-
-    fetch('/api/items', {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'Accept': 'application/json'
-        },
-        body: formData
-    })
-    .then(async res => {
-        let data;
-
-        try {
-            data = await res.json();
-        } catch (e) {
-            throw new Error("Server bukan JSON. Kemungkinan error 500 💀");
-        }
-
-        if (!res.ok) {
-            throw new Error(data.message || "Validasi gagal");
-        }
-
-        return data;
-    })
-    .then(() => {
-        bootstrap.Modal.getInstance(document.getElementById('itemModal')).hide();
-        showSuccessToast();
-        form.reset();
-        fetchItems();
-    })
-    .catch(err => {
-        console.error(err);
-
-        alertBox.className = "alert alert-danger";
-        alertBox.innerText = err.message;
-        alertBox.classList.remove("d-none");
-    })
-    .finally(() => {
-        btn.disabled = false;
-        btn.innerHTML = "Simpan";
-    });
-}
-
-/* ================= LOAD CATEGORY SELECT ================= */
-function loadCategorySelect() {
-    fetch('/api/categories')
-        .then(res => res.json())
-        .then(data => {
-            const select = document.getElementById("categorySelect");
-            if (!select) return;
-            
-            select.innerHTML = '<option value="">-- pilih kategori --</option>';
-
-            data.forEach(cat => {
-                select.innerHTML += `<option value="${cat.id}">${escapeHtml(cat.name)}</option>`;
-            });
-        })
-        .catch(error => console.error('Error loading categories:', error));
-}
-
-/* ================= INIT ================= */
-document.addEventListener("DOMContentLoaded", () => {
-    fetchItems();
-});
-</script>
-
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('searchInput');
+        const categoryFilter = document.getElementById('categoryFilter');
+        const stockFilter = document.getElementById('stockFilter');
+        const filterForm = document.getElementById('filterForm');
+
+        // Search optimizer dengan debounce 350ms
+        const triggerSearch = debounce(() => {
+            filterForm.submit();
+        }, 350);
+
+        if (searchInput) {
+            searchInput.addEventListener('input', triggerSearch);
+        }
+
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', () => filterForm.submit());
+        }
+
+        if (stockFilter) {
+            stockFilter.addEventListener('change', () => filterForm.submit());
+        }
+    });
+</script>
+@endpush

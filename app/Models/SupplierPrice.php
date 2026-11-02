@@ -7,23 +7,30 @@ use Illuminate\Database\Eloquent\Model;
 
 class SupplierPrice extends Model
 {
-    /** @use HasFactory<\Database\Factories\SupplierPricemFactory> */
     use HasFactory;
 
     protected $fillable = [
-        'supplier_id',
         'item_id',
+        'supplier_id',
         'unit_price',
-        'dozen_price',
+        'lusin_price',
     ];
 
-    public function supplier()
+    protected function casts(): array
     {
-        return $this->belongsTo(Supplier::class);
+        return [
+            'unit_price' => 'decimal:2',
+            'lusin_price' => 'decimal:2',
+        ];
     }
 
     public function item()
     {
         return $this->belongsTo(Item::class);
+    }
+
+    public function supplier()
+    {
+        return $this->belongsTo(Supplier::class);
     }
 }

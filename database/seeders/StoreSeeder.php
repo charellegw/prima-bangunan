@@ -2,24 +2,26 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-use App\Models\User;
 use App\Models\Store;
+use App\Models\User;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class StoreSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $adminUser = User::where('email', 'admin@gmail.com')->first();
+        $admin = User::where('email', 'admin@gmail.com')->first();
 
-        Store::create([
-            'owner_id' => $adminUser->id,
-            'name' => 'Prima Bangunan',
-            'timezone' => 'Asia/Jayapura',
-        ]);
+        Store::firstOrCreate(
+            ['name' => 'Prima Bangunan'],
+            [
+                'id' => (string) Str::uuid(),
+                'owner_id' => $admin?->id,
+                'timezone' => 'Asia/Jakarta',
+                'address' => 'Jl. Raya Industri Bangunan No. 88, Jakarta Barat',
+                'phone' => '021-5558899',
+            ]
+        );
     }
 }

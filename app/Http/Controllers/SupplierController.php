@@ -3,117 +3,116 @@
 namespace App\Http\Controllers;
 
 use App\Models\Item;
+use App\Models\Store;
 use App\Models\Supplier;
 use App\Models\SupplierPrice;
-use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreSupplierRequest;
-use App\Http\Requests\UpdateSupplierRequest;
 use Illuminate\Http\Request;
 
 class SupplierController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $store = Store::first();
+        $query = Supplier::withCount(['items', 'invoiceSuppliers']);
+
+        if ($request->filled('q')) {
+            $search = trim($request->q);
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('location', 'LIKE', "%{$search}%")
+                  ->orWhere('phone', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $suppliers = $query->orderBy('name', 'asc')->paginate(10)->withQueryString();
+
+        return view('suppliers.index', compact('suppliers', 'store'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function store(Request $request)
     {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request, Item $item)
-    {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'location' => 'nullable|string|max:255',
-            'unit_price' => 'required|numeric|min:0',
-            'dozen_price' => 'nullable|numeric|min:0',
+            'phone' => 'nullable|string|max:50',
         ]);
 
-        // 🔹 buat supplier baru
+        $store = Store::first();
+
         $supplier = Supplier::create([
-            'store_id' => $item->store_id,
-            'name' => $request->name,
-            'location' => $request->location,
+            'store_id' => $store->id,
+            'name' => $validated['name'],
+            'location' => $validated['location'] ?? null,
+            'phone' => $validated['phone'] ?? null,
         ]);
 
-        // 🔹 masukin harga ke pivot table
-        SupplierPrice::create([
-            'supplier_id' => $supplier->id,
-            'item_id' => $item->id,
-            'unit_price' => $request->unit_price,
-            'dozen_price' => $request->dozen_price,
-        ]);
-
-        return redirect()->back()->with('success', 'Supplier berhasil ditambahkan.');
+        return redirect()->back()->with('success', 'Supplier "' . $supplier->name . '" berhasil ditambahkan.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Supplier $supplier)
+    public function update(Request $request, $id)
     {
-        //
-    }
+        $supplier = Supplier::findOrFail($id);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Supplier $supplier)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Item $item, Supplier $supplier)
-    {
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'location' => 'nullable|string|max:255',
-            'unit_price' => 'required|numeric|min:0',
-            'dozen_price' => 'nullable|numeric|min:0',
+            'phone' => 'nullable|string|max:50',
         ]);
 
-        $supplier->update([
-            'name' => $request->name,
-            'location' => $request->location,
-        ]);
+        $supplier->update($validated);
 
-        SupplierPrice::where('supplier_id', $supplier->id)
-            ->where('item_id', $item->id)
-            ->update([
-                'unit_price' => $request->unit_price,
-                'dozen_price' => $request->dozen_price,
-            ]);
-
-        return back()->with('success', 'Supplier berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Data supplier berhasil diperbarui.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Item $item, Supplier $supplier)
+    public function destroy($id)
     {
-        // 🔹 hapus harga item terkait dulu
-        SupplierPrice::where('item_id', $item->id)
-            ->where('supplier_id', $supplier->id)
-            ->delete();
-
-        // 🔹 hapus supplier (kalau mau global delete)
+        $supplier = Supplier::findOrFail($id);
+        $name = $supplier->name;
         $supplier->delete();
 
-        return redirect()->back()->with('success', 'Supplier dihapus (RIP 🪦)');
+        return redirect()->back()->with('success', 'Supplier "' . $name . '" berhasil dihapus.');
+    }
+
+    /**
+     * Tambah atau perbarui relasi harga supplier untuk suatu barang
+     */
+    public function storeItemSupplierPrice(Request $request, $itemId)
+    {
+        $item = Item::findOrFail($itemId);
+
+        $validated = $request->validate([
+            'supplier_id' => 'required|exists:suppliers,id',
+            'unit_price' => 'required|numeric|min:0',
+            'lusin_price' => 'nullable|numeric|min:0',
+        ]);
+
+        $lusinPrice = !empty($validated['lusin_price'])
+            ? $validated['lusin_price']
+            : ($validated['unit_price'] * 12);
+
+        SupplierPrice::updateOrCreate(
+            [
+                'item_id' => $item->id,
+                'supplier_id' => $validated['supplier_id'],
+            ],
+            [
+                'unit_price' => $validated['unit_price'],
+                'lusin_price' => $lusinPrice,
+            ]
+        );
+
+        return redirect()->route('item.show', $item->id)->with('success', 'Harga supplier untuk barang ini berhasil disimpan.');
+    }
+
+    /**
+     * Hapus relasi harga supplier dari suatu barang
+     */
+    public function destroyItemSupplierPrice($itemId, $supplierId)
+    {
+        SupplierPrice::where('item_id', $itemId)
+            ->where('supplier_id', $supplierId)
+            ->delete();
+
+        return redirect()->route('item.show', $itemId)->with('success', 'Harga supplier berhasil dihapus dari barang ini.');
     }
 }

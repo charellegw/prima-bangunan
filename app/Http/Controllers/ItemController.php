@@ -3,192 +3,166 @@
 namespace App\Http\Controllers;
 
 use App\Models\Item;
+use App\Models\ItemCategory;
 use App\Models\Store;
 use App\Models\Supplier;
 use App\Models\SupplierPrice;
-use App\Models\ItemCategory;
-use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreItemRequest;
-use App\Http\Requests\UpdateItemRequest;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ItemController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function showItems()
+    public function showItems(Request $request)
     {
-        return view('items.index');
-    }
+        $store = Store::first();
+        $query = Item::with(['category', 'supplierPrices.supplier']);
 
-    public function show($itemId)
-    {
-        $item = Item::findOrFail($itemId);
+        // Search tidak ketat (substring / partial matching misal: 'pom' cocok dengan 'pompa')
+        if ($request->filled('q')) {
+            $search = trim($request->q);
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('brand', 'LIKE', "%{$search}%")
+                  ->orWhere('description', 'LIKE', "%{$search}%");
+            });
+        }
 
-        $suppliers = Supplier::whereHas('supplierPrices', function ($query) use ($itemId) {
-            $query->where('item_id', $itemId);
-        })->get();
+        // Filter Kategori
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
 
-        // ambil semua location unik dari supplier
-        $locations = Supplier::select('location')
-            ->distinct()
-            ->pluck('location')
-            ->filter()
-            ->values();
-
-        // struktur harga: [supplier_id][location] = price data
-        $prices = [];
-
-        foreach ($suppliers as $supplier) {
-            $itemPrices = $item->supplierPrices()
-                ->where('supplier_id', $supplier->id)
-                ->get();
-
-            foreach ($itemPrices as $price) {
-                $loc = $supplier->location ?? 'UNKNOWN LOCATION';
-
-                $prices[$supplier->id][$loc] = [
-                    'pcs' => $price->unit_price,
-                    'lusin' => $price->dozen_price,
-                ];
+        // Filter Status Stok
+        if ($request->filled('stock_status')) {
+            if ($request->stock_status === 'out') {
+                $query->where('stock', '<=', 0);
+            } elseif ($request->stock_status === 'low') {
+                $query->where('stock', '>', 0)->where('stock', '<=', 10);
+            } elseif ($request->stock_status === 'available') {
+                $query->where('stock', '>', 10);
             }
         }
 
-        return view('items.details', compact(
-            'item',
-            'suppliers',
-            'locations',
-            'prices'
-        ));
+        $items = $query->orderBy('name', 'asc')->paginate(12)->withQueryString();
+        $categories = ItemCategory::orderBy('name', 'asc')->get();
+        $suppliers = Supplier::orderBy('name', 'asc')->get();
+
+        return view('items.index', compact('items', 'categories', 'suppliers', 'store'));
     }
 
-
+    /**
+     * API untuk live search & filter (dengan response JSON)
+     */
     public function getAllItems(Request $request)
     {
-        $items = Item::query()
-            ->when($request->search, fn($q) =>
-                $q->where('name', 'like', "%{$request->search}%")
-            )
+        $query = Item::with('category');
 
-            ->when($request->category, fn($q) =>
-                $q->whereHas('category', fn($c) =>
-                    $c->where('name', $request->category)
-                )
-            )
+        if ($request->filled('q')) {
+            $search = trim($request->q);
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('brand', 'LIKE', "%{$search}%");
+            });
+        }
 
-            ->when($request->brand, fn($q) =>
-                $q->where('brand', $request->brand)
-            )
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
 
-            ->when($request->stock === 'empty', fn($q) =>
-                $q->where('stock', 0)
-            )
-
-            ->when($request->stock === 'low', fn($q) =>
-                $q->where('stock', '<', 10)
-            )
-
-            ->with('category')
-            ->latest()
-            ->get()
-            ->map(fn($item) => [
-                'id' => $item->id,
-                'name' => $item->name,
-                'category' => $item->category->name ?? '-',
-                'brand' => $item->brand,
-                'stock' => $item->stock,
-                'price' => number_format($item->price, 0, ',', '.'),
-                'reseller_price' => number_format($item->reseller_price, 0, ',', '.'),
-                'image' => $item->image_url 
-                    ? asset('storage/'.$item->image_url)
-                    : asset('image.png')
-            ]);
+        $items = $query->orderBy('name', 'asc')->limit(30)->get();
 
         return response()->json($items);
     }
 
-    public function getBrands(Request $request)
+    public function show($itemId)
     {
-        return response()->json(
-            Item::query()
-                ->select('brand')
-                ->whereNotNull('brand')
-                ->when($request->search, fn($q) =>
-                    $q->where('brand', 'like', "%{$request->search}%")
-                )
-                ->distinct()
-                ->orderBy('brand')
-                ->pluck('brand')
-        );
+        $item = Item::with(['category', 'supplierPrices.supplier', 'invoiceDetails.invoice'])
+            ->findOrFail($itemId);
+
+        $suppliers = Supplier::orderBy('name', 'asc')->get();
+        $categories = ItemCategory::orderBy('name', 'asc')->get();
+
+        return view('items.details', compact('item', 'suppliers', 'categories'));
     }
 
     public function store(Request $request)
     {
-        try {
-            $validated = $request->validate([
-                'name' => 'required',
-                'brand' => 'required',
-                'category_id' => 'required|exists:item_categories,id',
-                'stock' => 'nullable|integer',
-                'price' => 'nullable|numeric',
-                'reseller_price' => 'nullable|numeric',
-                'description' => 'nullable',
-                'image' => 'nullable|image|max:2048'
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'category_id' => 'nullable|exists:item_categories,id',
+            'brand' => 'nullable|string|max:100',
+            'stock' => 'required|integer|min:0',
+            'price' => 'required|numeric|min:0',
+            'retail_price' => 'required|numeric|min:0',
+            'description' => 'nullable|string',
+            'image_url' => 'nullable|string|max:500',
+            'supplier_id' => 'nullable|exists:suppliers,id',
+            'unit_price' => 'nullable|numeric|min:0',
+            'lusin_price' => 'nullable|numeric|min:0',
+        ]);
+
+        $store = Store::first();
+
+        $item = Item::create([
+            'id' => (string) Str::uuid(),
+            'store_id' => $store->id,
+            'category_id' => $validated['category_id'] ?? null,
+            'name' => $validated['name'],
+            'brand' => $validated['brand'] ?? null,
+            'stock' => $validated['stock'],
+            'price' => $validated['price'],
+            'retail_price' => $validated['retail_price'],
+            'description' => $validated['description'] ?? null,
+            'image_url' => $validated['image_url'] ?? null,
+        ]);
+
+        // Hubungkan supplier awal jika disertakan
+        if (!empty($validated['supplier_id']) && !empty($validated['unit_price'])) {
+            SupplierPrice::create([
+                'item_id' => $item->id,
+                'supplier_id' => $validated['supplier_id'],
+                'unit_price' => $validated['unit_price'],
+                'lusin_price' => $validated['lusin_price'] ?? ($validated['unit_price'] * 12),
             ]);
-
-            $imagePath = null;
-
-            if ($request->hasFile('image')) {
-                $imagePath = $request->file('image')->store('items', 'public');
-            }
-
-            $user = auth()->user();
-
-            $store = Store::where('owner_id', $user->id)->first();
-
-            if (!$store) {
-                return response()->json([
-                    'message' => 'User tidak punya store 💀'
-                ], 400);
-            }
-
-            Item::create([
-                ...$validated,
-                'image_url' => $imagePath,
-                'store_id' => $store->id
-            ]);
-
-            return response()->json(['success' => true]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => $e->getMessage()
-            ], 500);
         }
+
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Barang berhasil ditambahkan', 'item' => $item], 201);
+        }
+
+        return redirect()->route('item.index')->with('success', 'Barang "' . $item->name . '" berhasil ditambahkan.');
     }
 
-    public function edit(Item $item)
+    public function update(Request $request, $itemId)
     {
-        //
+        $item = Item::findOrFail($itemId);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'category_id' => 'nullable|exists:item_categories,id',
+            'brand' => 'nullable|string|max:100',
+            'stock' => 'required|integer|min:0',
+            'price' => 'required|numeric|min:0',
+            'retail_price' => 'required|numeric|min:0',
+            'description' => 'nullable|string',
+            'image_url' => 'nullable|string|max:500',
+        ]);
+
+        $item->update($validated);
+
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Barang berhasil diperbarui', 'item' => $item]);
+        }
+
+        return redirect()->route('item.show', $item->id)->with('success', 'Informasi barang berhasil diperbarui.');
     }
 
-    public function update(UpdateItemRequest $request, Item $item)
+    public function destroy($itemId)
     {
-        //
-    }
-
-    public function destroy($id)
-    {
-        $item = Item::findOrFail($id);
-
-        $item->suppliers()->detach();
-
+        $item = Item::findOrFail($itemId);
+        $itemName = $item->name;
         $item->delete();
 
-        return redirect()
-            ->route('item.index')
-            ->with('success', 'Item berhasil dihapus!');
+        return redirect()->route('item.index')->with('success', 'Barang "' . $itemName . '" berhasil dihapus.');
     }
 }

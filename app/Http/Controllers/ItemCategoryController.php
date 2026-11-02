@@ -3,74 +3,39 @@
 namespace App\Http\Controllers;
 
 use App\Models\ItemCategory;
-use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreItemCategoryRequest;
-use App\Http\Requests\UpdateItemCategoryRequest;
+use App\Models\Store;
 use Illuminate\Http\Request;
 
 class ItemCategoryController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function getAllCategories(Request $request)
     {
         $query = ItemCategory::query();
 
-        if ($request->search) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+        if ($request->filled('search')) {
+            $query->where('name', 'LIKE', '%' . trim($request->search) . '%');
         }
 
-        return response()->json(
-            $query->get(['id', 'name'])
-        );
+        return response()->json($query->orderBy('name', 'asc')->get(['id', 'name']));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function store(Request $request)
     {
-        //
-    }
+        $request->validate([
+            'name' => 'required|string|max:100',
+        ]);
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreItemCategoryRequest $request)
-    {
-        //
-    }
+        $store = Store::first();
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(ItemCategory $itemCategory)
-    {
-        //
-    }
+        $category = ItemCategory::firstOrCreate([
+            'store_id' => $store->id,
+            'name' => trim($request->name),
+        ]);
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(ItemCategory $itemCategory)
-    {
-        //
-    }
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Kategori berhasil ditambahkan', 'category' => $category], 201);
+        }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateItemCategoryRequest $request, ItemCategory $itemCategory)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(ItemCategory $itemCategory)
-    {
-        //
+        return redirect()->back()->with('success', 'Kategori "' . $category->name . '" berhasil ditambahkan.');
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Store;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -11,13 +12,9 @@ class SetTimezone
     public function handle(Request $request, Closure $next): Response
     {
         if (auth()->check()) {
+            $timezone = auth()->user()->store?->timezone ?? Store::first()?->timezone ?? config('app.timezone', 'Asia/Jakarta');
 
-            $timezone = auth()->user()->store?->timezone ?? config('app.timezone');
-
-            config([
-                'app.timezone' => $timezone
-            ]);
-
+            config(['app.timezone' => $timezone]);
             date_default_timezone_set($timezone);
         }
 

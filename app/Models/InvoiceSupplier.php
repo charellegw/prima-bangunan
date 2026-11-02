@@ -2,29 +2,35 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class InvoiceSupplier extends Model
 {
-    /** @use HasFactory<\Database\Factories\InvoiceSupplierFactory> */
-    use HasFactory;
-    use HasUuids;
+    use HasFactory, HasUuids;
 
     protected $keyType = 'string';
     public $incrementing = false;
 
     protected $fillable = [
+        'id',
+        'invoice_number',
         'store_id',
         'supplier_id',
         'payment_id',
-        'datetime',
-        'status',
-        'notes',
+        'date',
+        'note',
         'grand_total',
-        'visible',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'date' => 'datetime',
+            'grand_total' => 'decimal:2',
+        ];
+    }
 
     public function store()
     {
@@ -38,11 +44,16 @@ class InvoiceSupplier extends Model
 
     public function payment()
     {
-        return $this->belongsTo(Payment::class);
+        return $this->belongsTo(Payment::class, 'payment_id');
     }
 
-    public function invoiceDetails()
+    public function invoiceSupplierDetails()
     {
-        return $this->hasMany(InvoiceSupplierDetail::class, 'invoice_supplier_id');
+        return $this->hasMany(InvoiceSupplierDetail::class);
+    }
+
+    public function shipments()
+    {
+        return $this->hasMany(Shipment::class);
     }
 }

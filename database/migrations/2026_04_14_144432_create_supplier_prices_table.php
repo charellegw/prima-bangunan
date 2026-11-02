@@ -6,24 +6,20 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('supplier_prices', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('supplier_id')->constrained('suppliers')->onDelete('cascade');
             $table->foreignUuid('item_id')->constrained('items')->onDelete('cascade');
+            $table->foreignId('supplier_id')->constrained('suppliers')->onDelete('cascade');
             $table->decimal('unit_price', 15, 2)->default(0);
-            $table->decimal('dozen_price', 15, 2)->nullable();
+            $table->decimal('lusin_price', 15, 2)->default(0);
             $table->timestamps();
+
+            $table->unique(['item_id', 'supplier_id']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('supplier_prices');
