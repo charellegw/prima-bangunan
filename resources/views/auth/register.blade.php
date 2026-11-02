@@ -1,0 +1,59 @@
+@extends('layouts.auth')
+
+@section('content')
+
+<h4 class="fw-bold mb-4">Daftar</h4>
+
+@if ($errors->any())
+    <div class="alert alert-danger py-2">
+        <ul class="mb-0 small">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+<form method="POST" action="{{ route('register') }}">
+    @csrf
+
+    <div class="mb-3">
+        <input type="text" name="name" 
+            class="form-control form-control-lg rounded-3" 
+            placeholder="Nama Lengkap" required>
+    </div>
+
+    <div class="mb-3">
+        <input type="email" name="email" 
+            class="form-control form-control-lg rounded-3" 
+            placeholder="Email" required>
+    </div>
+
+    <div class="mb-3">
+        <input type="password" name="password" 
+            class="form-control form-control-lg rounded-3" 
+            placeholder="Password" required>
+    </div>
+
+    <div class="mb-4">
+        <input type="password" name="password_confirmation" 
+            class="form-control form-control-lg rounded-3" 
+            placeholder="Konfirmasi Password" required>
+    </div>
+
+    <div class="d-grid mb-3">
+        <button class="btn btn-dark btn-lg rounded-3">
+            Daftar
+        </button>
+    </div>
+
+    <p class="small text-muted">
+        Sudah punya akun?
+        <a href="{{ route('login') }}" class="fw-semibold text-decoration-none">
+            Masuk
+        </a>
+    </p>
+
+</form>
+
+@endsection
