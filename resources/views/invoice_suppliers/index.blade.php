@@ -3,155 +3,161 @@
 @section('title', 'Pembelian Stok Supplier — Prima Bangunan')
 
 @section('content')
-<div class="container-fluid p-0">
-    <!-- Header -->
-    <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
-        <div>
-            <h4 class="fw-bold mb-1 text-dark">Faktur Pembelian Stok Supplier</h4>
-            <p class="text-muted small mb-0">Kelola pesanan material masuk dari pabrik / distributor supplier dan hutang dagang toko.</p>
-        </div>
-        <div>
-            <a href="{{ route('invoice-suppliers.create') }}" class="btn btn-primary-custom d-flex align-items-center shadow-sm">
-                <i class="bi bi-box-arrow-in-down me-2"></i> Beli Stok / Faktur Masuk
-            </a>
-        </div>
+<!-- Page Header -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 pb-2 gap-3">
+    <div>
+        <h1 class="page-title">Faktur Pembelian Stok Supplier</h1>
+        <p class="page-subtitle">Kelola pesanan material masuk dari pabrik / distributor supplier dan audit hutang dagang toko.</p>
     </div>
+    <div>
+        <x-button :href="route('invoice-suppliers.create')" variant="primary" icon="bag-plus">
+            Beli Stok / Faktur Masuk
+        </x-button>
+    </div>
+</div>
 
-    <!-- Search & Filter Bar -->
-    <div class="card card-custom p-3 mb-4">
-        <form method="GET" action="{{ route('invoice-suppliers.index') }}" id="filterForm">
-            <div class="row g-2 align-items-center">
-                <!-- Search Input with Debounce -->
-                <div class="col-12 col-md-4">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0 text-muted">
-                            <i class="bi bi-search"></i>
-                        </span>
-                        <input type="text"
-                               name="q"
-                               id="searchInput"
-                               value="{{ request('q') }}"
-                               placeholder="Cari nomor faktur, nama supplier..."
-                               class="form-control border-start-0 ps-0"
-                               autocomplete="off">
-                    </div>
-                </div>
-
-                <!-- Filter Supplier -->
-                <div class="col-6 col-md-3">
-                    <select name="supplier_id" id="supplierFilter" class="form-select">
-                        <option value="">Semua Supplier</option>
-                        @foreach($suppliers as $sup)
-                            <option value="{{ $sup->id }}" {{ request('supplier_id') == $sup->id ? 'selected' : '' }}>
-                                {{ $sup->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- Filter Status Pembayaran -->
-                <div class="col-6 col-md-3">
-                    <select name="payment_status" id="paymentStatusFilter" class="form-select">
-                        <option value="">Semua Status Bayar</option>
-                        <option value="lunas" {{ request('payment_status') === 'lunas' ? 'selected' : '' }}>Lunas</option>
-                        <option value="sebagian" {{ request('payment_status') === 'sebagian' ? 'selected' : '' }}>Sebagian (DP/Tempo)</option>
-                        <option value="belum_bayar" {{ request('payment_status') === 'belum_bayar' ? 'selected' : '' }}>Belum Bayar</option>
-                        <option value="jatuh_tempo" {{ request('payment_status') === 'jatuh_tempo' ? 'selected' : '' }}>Jatuh Tempo</option>
-                    </select>
-                </div>
-
-                <!-- Filter Tanggal & Reset -->
-                <div class="col-10 col-md-1">
-                    <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control px-2" title="Mulai Tanggal" onchange="this.form.submit()">
-                </div>
-                <div class="col-2 col-md-1 text-end">
-                    @if(request()->anyFilled(['q', 'supplier_id', 'payment_status', 'date_from']))
-                        <a href="{{ route('invoice-suppliers.index') }}" class="btn btn-outline-secondary w-100" title="Reset Filter">
-                            <i class="bi bi-x-lg"></i>
-                        </a>
-                    @endif
+<!-- Search & Filter Bar -->
+<div class="pb-card p-3 mb-4">
+    <form method="GET" action="{{ route('invoice-suppliers.index') }}" id="filterForm">
+        <div class="row g-2 align-items-center">
+            <!-- Search Input with Debounce -->
+            <div class="col-12 col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted ps-3">
+                        <x-icon name="search" size="16" />
+                    </span>
+                    <input type="text"
+                           name="q"
+                           id="searchInput"
+                           value="{{ request('q') }}"
+                           placeholder="Cari nomor faktur, nama supplier..."
+                           class="form-control border-start-0 ps-2"
+                           autocomplete="off">
                 </div>
             </div>
-        </form>
-    </div>
 
-    <!-- Tabel Faktur Supplier -->
-    <div class="card card-custom p-0 overflow-hidden">
-        <div class="card-body p-0 table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light small text-secondary">
-                    <tr>
-                        <th class="ps-4">No. Faktur</th>
-                        <th>Tanggal Pembelian</th>
-                        <th>Supplier</th>
-                        <th>Total Tagihan</th>
-                        <th>Status Pembayaran</th>
-                        <th>Sisa Hutang Toko</th>
-                        <th class="pe-4 text-end">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($invoiceSuppliers as $inv)
-                    <tr>
-                        <td class="ps-4">
-                            <a href="{{ route('invoice-suppliers.show', $inv->id) }}" class="fw-bold font-monospace text-primary text-decoration-none">
-                                {{ $inv->invoice_number }}
-                            </a>
-                        </td>
-                        <td>
-                            <div class="text-dark fw-medium">{{ $inv->date->format('d M Y') }}</div>
-                            <small class="text-muted">{{ $inv->date->format('H:i') }} WIB</small>
-                        </td>
-                        <td>
-                            <div class="fw-bold text-dark">{{ $inv->supplier->name ?? 'Supplier' }}</div>
-                            <small class="text-muted"><i class="bi bi-geo-alt me-1"></i> {{ $inv->supplier->location ?? '-' }}</small>
-                        </td>
-                        <td>
-                            <span class="fw-bold text-dark fs-6">Rp {{ number_format($inv->grand_total, 0, ',', '.') }}</span>
-                        </td>
-                        <td>
-                            @php $status = $inv->payment->status ?? 'belum_bayar'; @endphp
-                            @if($status === 'lunas')
-                                <span class="badge-lunas"><i class="bi bi-check-circle me-1"></i> Lunas</span>
-                            @elseif($status === 'sebagian')
-                                <span class="badge-sebagian"><i class="bi bi-hourglass-split me-1"></i> Sebagian</span>
-                            @elseif($status === 'jatuh_tempo')
-                                <span class="badge-jatuh-tempo"><i class="bi bi-exclamation-triangle me-1"></i> Jatuh Tempo</span>
-                            @else
-                                <span class="badge-belum-bayar"><i class="bi bi-x-circle me-1"></i> Belum Bayar</span>
-                            @endif
-                        </td>
-                        <td>
-                            @php $remaining = $inv->payment->remaining_balance ?? 0; @endphp
-                            @if($remaining > 0)
-                                <span class="text-danger fw-bold">Rp {{ number_format($remaining, 0, ',', '.') }}</span>
-                            @else
-                                <span class="text-success small"><i class="bi bi-check2-all"></i> Lunas</span>
-                            @endif
-                        </td>
-                        <td class="pe-4 text-end">
-                            <a href="{{ route('invoice-suppliers.show', $inv->id) }}" class="btn btn-sm btn-light border rounded-pill px-3 fw-semibold">
-                                <i class="bi bi-file-earmark-text me-1"></i> Detail
-                            </a>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="7" class="text-center py-5 text-muted">
-                            <i class="bi bi-bag-plus fs-1 text-secondary opacity-50 d-block mb-2"></i>
-                            Tidak ada data faktur pembelian supplier yang cocok.
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
+            <!-- Filter Supplier -->
+            <div class="col-6 col-md-3">
+                <select name="supplier_id" id="supplierFilter" class="form-select">
+                    <option value="">Semua Supplier</option>
+                    @foreach($suppliers as $sup)
+                        <option value="{{ $sup->id }}" {{ request('supplier_id') == $sup->id ? 'selected' : '' }}>
+                            {{ $sup->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Filter Status Pembayaran -->
+            <div class="col-6 col-md-3">
+                <select name="payment_status" id="paymentStatusFilter" class="form-select">
+                    <option value="">Semua Status Bayar</option>
+                    <option value="lunas" {{ request('payment_status') === 'lunas' ? 'selected' : '' }}>Lunas</option>
+                    <option value="sebagian" {{ request('payment_status') === 'sebagian' ? 'selected' : '' }}>Sebagian (DP/Tempo)</option>
+                    <option value="belum_bayar" {{ request('payment_status') === 'belum_bayar' ? 'selected' : '' }}>Belum Bayar</option>
+                    <option value="jatuh_tempo" {{ request('payment_status') === 'jatuh_tempo' ? 'selected' : '' }}>Jatuh Tempo</option>
+                </select>
+            </div>
+
+            <!-- Filter Tanggal & Reset -->
+            <div class="col-10 col-md-1">
+                <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control px-2" title="Mulai Tanggal" onchange="this.form.submit()">
+            </div>
+            <div class="col-2 col-md-1 d-flex">
+                @if(request()->anyFilled(['q', 'supplier_id', 'payment_status', 'date_from']))
+                    <a href="{{ route('invoice-suppliers.index') }}" class="pb-btn pb-btn-secondary w-100" title="Reset Filter">
+                        <x-icon name="x" size="16" />
+                    </a>
+                @endif
+            </div>
         </div>
-    </div>
+    </form>
+</div>
 
-    <!-- Pagination -->
-    <div class="mt-4 d-flex justify-content-center">
-        {{ $invoiceSuppliers->links('pagination::bootstrap-5') }}
+<!-- Tabel Faktur Supplier -->
+<div class="pb-table-card">
+    <div class="table-responsive">
+        <table class="pb-table">
+            <thead>
+                <tr>
+                    <th>No. Faktur</th>
+                    <th>Tanggal Pembelian</th>
+                    <th>Supplier</th>
+                    <th class="text-end">Total Tagihan</th>
+                    <th class="text-center">Status Pembayaran</th>
+                    <th class="text-end">Sisa Hutang Toko</th>
+                    <th class="text-end">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($invoiceSuppliers as $inv)
+                <tr>
+                    <td class="nowrap">
+                        <a href="{{ route('invoice-suppliers.show', $inv->id) }}" class="fw-semibold text-primary text-decoration-none tabular-nums">
+                            {{ $inv->invoice_number }}
+                        </a>
+                    </td>
+                    <td class="nowrap">
+                        <div class="text-main fw-medium">{{ $inv->date ? $inv->date->format('d M Y') : '-' }}</div>
+                        <div class="text-secondary small" style="font-size: 11.5px;">{{ $inv->date ? $inv->date->format('H:i') . ' WIB' : '' }}</div>
+                    </td>
+                    <td>
+                        <div class="fw-semibold text-main">{{ $inv->supplier->name ?? 'Supplier' }}</div>
+                        <div class="text-secondary small d-flex align-items-center gap-1" style="font-size: 11.5px;">
+                            <x-icon name="map-pin" size="12" class="text-muted" />
+                            <span>{{ $inv->supplier->location ?? '-' }}</span>
+                        </div>
+                    </td>
+                    <td class="text-end fw-bold text-main nowrap tabular-nums">
+                        Rp {{ number_format($inv->grand_total, 0, ',', '.') }}
+                    </td>
+                    <td class="text-center nowrap">
+                        @php $status = $inv->payment->status ?? 'belum_bayar'; @endphp
+                        @if($status === 'lunas')
+                            <x-badge variant="success">Lunas</x-badge>
+                        @elseif($status === 'sebagian')
+                            <x-badge variant="warning">Sebagian</x-badge>
+                        @elseif($status === 'jatuh_tempo')
+                            <x-badge variant="danger">Jatuh Tempo</x-badge>
+                        @else
+                            <x-badge variant="neutral">Belum Bayar</x-badge>
+                        @endif
+                    </td>
+                    <td class="text-end nowrap tabular-nums">
+                        @php $remaining = $inv->payment->remaining_balance ?? 0; @endphp
+                        @if($remaining > 0)
+                            <span class="text-danger fw-bold">Rp {{ number_format($remaining, 0, ',', '.') }}</span>
+                        @else
+                            <span class="text-success small fw-medium">Lunas</span>
+                        @endif
+                    </td>
+                    <td class="text-end nowrap">
+                        <x-button :href="route('invoice-suppliers.show', $inv->id)" variant="outline" size="sm" icon="eye">
+                            Detail Faktur
+                        </x-button>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="7">
+                        <x-empty-state 
+                            icon="bag-plus"
+                            title="Tidak ada faktur pembelian"
+                            description="Belum ada transaksi pembelian stok dari supplier yang sesuai dengan pencarian Anda."
+                            actionLabel="Beli Stok Sekarang"
+                            :actionUrl="route('invoice-suppliers.create')"
+                        />
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
+</div>
+
+<!-- Pagination -->
+<div class="mt-4 d-flex justify-content-center">
+    {{ $invoiceSuppliers->links('pagination::bootstrap-5') }}
 </div>
 @endsection
 

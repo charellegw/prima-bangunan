@@ -3,31 +3,31 @@
 @section('title', 'Logistik & Pengiriman — Prima Bangunan')
 
 @section('content')
-<div class="container-fluid p-0">
+<div class="d-flex flex-column gap-4">
     <!-- Header -->
-    <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
         <div>
-            <h4 class="fw-bold mb-1 text-dark">Logistik & Status Pengiriman Material</h4>
-            <p class="text-muted small mb-0">Kelola armada pengantaran barang ke pelanggan serta penerimaan pasokan masuk dari supplier.</p>
+            <h1 class="page-title mb-1">Logistik & Status Pengiriman</h1>
+            <p class="page-subtitle mb-0">Kelola armada pengantaran barang ke pelanggan dan penerimaan pasokan dari supplier</p>
         </div>
     </div>
 
-    <!-- Search & Filter Bar -->
-    <div class="card card-custom p-3 mb-4">
+    <!-- Filter Card -->
+    <x-card :flush="true" class="p-3">
         <form method="GET" action="{{ route('shipments.index') }}" id="filterForm">
             <div class="row g-2 align-items-center">
                 <!-- Search Input with Debounce -->
                 <div class="col-12 col-md-5">
                     <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0 text-muted">
-                            <i class="bi bi-search"></i>
+                        <span class="input-group-text bg-white border-end-0 text-muted ps-3">
+                            <x-icon name="search" style="width: 16px; height: 16px;" />
                         </span>
                         <input type="text"
                                name="q"
                                id="searchInput"
                                value="{{ request('q') }}"
-                               placeholder="Cari no. resi pengiriman, alamat, pelanggan, supplier..."
-                               class="form-control border-start-0 ps-0"
+                               placeholder="Cari no. resi, alamat, pelanggan, supplier..."
+                               class="form-control border-start-0 ps-1"
                                autocomplete="off">
                     </div>
                 </div>
@@ -55,26 +55,26 @@
                 <!-- Reset Button -->
                 <div class="col-12 col-md-1 text-end">
                     @if(request()->anyFilled(['q', 'type', 'status']))
-                        <a href="{{ route('shipments.index') }}" class="btn btn-outline-secondary w-100" title="Reset Filter">
-                            <i class="bi bi-x-lg"></i>
-                        </a>
+                        <x-button href="{{ route('shipments.index') }}" variant="secondary" class="w-100" title="Reset Filter">
+                            <x-icon name="x" style="width: 16px; height: 16px;" />
+                        </x-button>
                     @endif
                 </div>
             </div>
         </form>
-    </div>
+    </x-card>
 
     <!-- Tabel Pengiriman -->
-    <div class="card card-custom p-0 overflow-hidden">
-        <div class="card-body p-0 table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light small text-secondary">
+    <x-card :flush="true" class="p-0 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table pb-table align-middle mb-0">
+                <thead>
                     <tr>
-                        <th class="ps-4">No. Pengiriman</th>
+                        <th class="ps-4">No. Resi</th>
                         <th>Tipe</th>
                         <th>Dokumen Terkait</th>
                         <th>Tujuan / Alamat</th>
-                        <th>Tanggal Pengiriman</th>
+                        <th>Jadwal Kirim</th>
                         <th>Ongkir</th>
                         <th>Status</th>
                         <th class="pe-4 text-end">Aksi</th>
@@ -83,81 +83,92 @@
                 <tbody>
                     @forelse($shipments as $sh)
                     <tr>
-                        <td class="ps-4">
-                            <a href="{{ route('shipments.show', $sh->id) }}" class="fw-bold font-monospace text-primary text-decoration-none">
+                        <td class="ps-4 nowrap">
+                            <a href="{{ route('shipments.show', $sh->id) }}" class="fw-semibold text-primary text-decoration-none tabular-nums">
                                 {{ $sh->shipment_number }}
                             </a>
                         </td>
-                        <td>
+                        <td class="nowrap">
                             @if($sh->type === 'outgoing')
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
-                                    <i class="bi bi-arrow-up-right me-1"></i> Ke Pelanggan
-                                </span>
+                                <x-badge variant="info">
+                                    <x-icon name="truck" style="width: 12px; height: 12px;" class="me-1" /> Ke Pelanggan
+                                </x-badge>
                             @else
-                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
-                                    <i class="bi bi-arrow-down-left me-1"></i> Dari Supplier
-                                </span>
+                                <x-badge variant="success">
+                                    <x-icon name="package" style="width: 12px; height: 12px;" class="me-1" /> Dari Supplier
+                                </x-badge>
                             @endif
                         </td>
                         <td>
                             @if($sh->invoice)
-                                <a href="{{ route('invoices.show', $sh->invoice->id) }}" class="text-decoration-none font-monospace small fw-bold text-dark">
+                                <a href="{{ route('invoices.show', $sh->invoice->id) }}" class="text-decoration-none small fw-semibold text-dark tabular-nums">
                                     {{ $sh->invoice->invoice_number }}
                                 </a>
-                                <small class="text-muted d-block">({{ $sh->invoice->client_name }})</small>
+                                <span class="text-muted d-block small">{{ $sh->invoice->client_name }}</span>
                             @elseif($sh->invoiceSupplier)
-                                <a href="{{ route('invoice-suppliers.show', $sh->invoiceSupplier->id) }}" class="text-decoration-none font-monospace small fw-bold text-dark">
+                                <a href="{{ route('invoice-suppliers.show', $sh->invoiceSupplier->id) }}" class="text-decoration-none small fw-semibold text-dark tabular-nums">
                                     {{ $sh->invoiceSupplier->invoice_number }}
                                 </a>
-                                <small class="text-muted d-block">({{ $sh->invoiceSupplier->supplier->name ?? 'Supplier' }})</small>
+                                <span class="text-muted d-block small">{{ $sh->invoiceSupplier->supplier->name ?? 'Supplier' }}</span>
                             @else
                                 <span class="text-muted small">-</span>
                             @endif
                         </td>
                         <td>
-                            <div class="text-dark small text-truncate" style="max-width: 250px;" title="{{ $sh->address }}">
-                                <i class="bi bi-geo-alt me-1 text-danger"></i> {{ $sh->address }}
+                            <div class="text-dark small text-truncate" style="max-width: 240px;" title="{{ $sh->address }}">
+                                {{ $sh->address }}
                             </div>
                         </td>
-                        <td>
-                            <div class="text-dark fw-medium small">{{ $sh->date->format('d M Y') }}</div>
-                            <small class="text-muted">{{ $sh->date->format('H:i') }} WIB</small>
+                        <td class="nowrap">
+                            <span class="text-dark small fw-medium tabular-nums">{{ $sh->date->format('d M Y') }}</span>
+                            <span class="text-muted small d-block tabular-nums">{{ $sh->date->format('H:i') }} WIB</span>
                         </td>
-                        <td>
-                            <span class="small font-monospace fw-semibold">Rp {{ number_format($sh->fee, 0, ',', '.') }}</span>
+                        <td class="nowrap">
+                            <span class="small fw-semibold tabular-nums text-dark">Rp {{ number_format($sh->fee, 0, ',', '.') }}</span>
                         </td>
-                        <td>
+                        <td class="nowrap">
                             @if($sh->status === 'delivered')
-                                <span class="badge bg-success text-white px-2 py-1"><i class="bi bi-check-circle me-1"></i> Sampai</span>
+                                <x-badge variant="success">
+                                    <x-icon name="check" style="width: 12px; height: 12px;" class="me-1" /> Sampai
+                                </x-badge>
                             @elseif($sh->status === 'shipping')
-                                <span class="badge bg-warning text-dark px-2 py-1"><i class="bi bi-truck me-1"></i> Di Jalan</span>
+                                <x-badge variant="warning">
+                                    <x-icon name="truck" style="width: 12px; height: 12px;" class="me-1" /> Di Jalan
+                                </x-badge>
                             @elseif($sh->status === 'pending')
-                                <span class="badge bg-secondary text-white px-2 py-1"><i class="bi bi-clock me-1"></i> Pending</span>
+                                <x-badge variant="neutral">
+                                    <x-icon name="clock" style="width: 12px; height: 12px;" class="me-1" /> Menunggu
+                                </x-badge>
                             @else
-                                <span class="badge bg-danger text-white px-2 py-1"><i class="bi bi-arrow-return-left me-1"></i> Retur</span>
+                                <x-badge variant="danger">
+                                    <x-icon name="alert-triangle" style="width: 12px; height: 12px;" class="me-1" /> Retur
+                                </x-badge>
                             @endif
                         </td>
-                        <td class="pe-4 text-end">
-                            <a href="{{ route('shipments.show', $sh->id) }}" class="btn btn-sm btn-light border rounded-pill px-3 fw-semibold">
-                                <i class="bi bi-eye me-1"></i> Detail
-                            </a>
+                        <td class="pe-4 text-end nowrap">
+                            <x-button href="{{ route('shipments.show', $sh->id) }}" variant="outline" size="sm">
+                                Detail
+                            </x-button>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="text-center py-5 text-muted">
-                            <i class="bi bi-truck fs-1 text-secondary opacity-50 d-block mb-2"></i>
-                            Tidak ada data pengiriman material yang cocok.
+                        <td colspan="8" class="text-center py-5">
+                            <x-empty-state
+                                icon="truck"
+                                title="Tidak ada data pengiriman"
+                                description="Tidak ada data pengiriman material yang cocok dengan filter pencarian Anda."
+                            />
                         </td>
                     </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-card>
 
     <!-- Pagination -->
-    <div class="mt-4 d-flex justify-content-center">
+    <div class="d-flex justify-content-center">
         {{ $shipments->links('pagination::bootstrap-5') }}
     </div>
 </div>

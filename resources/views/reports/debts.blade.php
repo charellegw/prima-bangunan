@@ -3,91 +3,76 @@
 @section('title', 'Buku Piutang & Hutang — Prima Bangunan')
 
 @section('content')
-<div class="container-fluid p-0">
+<div class="d-flex flex-column gap-4">
     <!-- Header -->
-    <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
         <div class="d-flex align-items-center gap-2">
-            <a href="{{ route('reports.index') }}" class="btn btn-outline-secondary rounded-pill px-3 py-1 small">
-                <i class="bi bi-arrow-left me-1"></i> Pusat Laporan
-            </a>
+            <x-button href="{{ route('reports.index') }}" variant="secondary" size="sm">
+                <x-icon name="arrow-left" style="width: 14px; height: 14px;" class="me-1" /> Pusat Laporan
+            </x-button>
             <div>
-                <h4 class="fw-bold mb-0 text-dark">Buku Piutang & Hutang (Aging / Jatuh Tempo)</h4>
-                <p class="text-muted small mb-0">Pemantauan arus kas tagihan belum lunas & status jatuh tempo</p>
+                <h1 class="page-title mb-0 fs-4">Buku Piutang & Hutang Dagang</h1>
+                <p class="page-subtitle mb-0 small">Pemantauan arus kas tagihan belum lunas, tempo pembayaran, dan prioritas penagihan</p>
             </div>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ request()->fullUrlWithQuery(['export' => 'excel']) }}" class="btn btn-success rounded-pill px-3 py-1 small fw-semibold shadow-sm">
-                <i class="bi bi-file-earmark-excel me-1"></i> Export Excel (.csv)
-            </a>
-            <a href="{{ request()->fullUrlWithQuery(['export' => 'pdf']) }}" target="_blank" class="btn btn-dark rounded-pill px-3 py-1 small fw-semibold shadow-sm">
-                <i class="bi bi-printer me-1"></i> Cetak / Export PDF
-            </a>
+            <x-button href="{{ request()->fullUrlWithQuery(['export' => 'excel']) }}" variant="outline" size="sm">
+                <x-icon name="download" style="width: 14px; height: 14px;" class="me-1" /> Export Excel
+            </x-button>
+            <x-button href="{{ request()->fullUrlWithQuery(['export' => 'pdf']) }}" target="_blank" variant="secondary" size="sm">
+                <x-icon name="printer" style="width: 14px; height: 14px;" class="me-1" /> Cetak / PDF
+            </x-button>
         </div>
     </div>
 
-    <!-- Ringkasan Saldo Tagihan -->
-    <div class="row g-3 mb-4">
+    <!-- Ringkasan Saldo Tagihan (3 Stat Cards) -->
+    <div class="row g-3">
         <div class="col-12 col-md-4">
-            <div class="card card-custom p-3 border-start border-4 border-warning bg-light">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-muted small fw-semibold">TOTAL PIUTANG PELANGGAN</div>
-                        <h3 class="fw-bold text-dark mt-1 mb-0">Rp {{ number_format($totalReceivableSum, 0, ',', '.') }}</h3>
-                        <small class="text-muted">{{ $receivables->count() }} nota penjualan belum lunas</small>
-                    </div>
-                    <div class="bg-warning bg-opacity-25 text-warning-emphasis p-3 rounded-circle">
-                        <i class="bi bi-box-arrow-in-down-right fs-4"></i>
-                    </div>
-                </div>
-            </div>
+            <x-stat-card
+                title="Total Piutang Pelanggan"
+                :value="'Rp ' . number_format($totalReceivableSum, 0, ',', '.') . ''"
+                icon="credit-card"
+                color="warning"
+                :description="$receivables->count() . ' nota penjualan belum lunas'"
+            />
         </div>
 
         <div class="col-12 col-md-4">
-            <div class="card card-custom p-3 border-start border-4 border-danger bg-light">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-muted small fw-semibold">TOTAL HUTANG KE SUPPLIER</div>
-                        <h3 class="fw-bold text-dark mt-1 mb-0">Rp {{ number_format($totalPayableSum, 0, ',', '.') }}</h3>
-                        <small class="text-muted">{{ $payables->count() }} faktur supplier belum lunas</small>
-                    </div>
-                    <div class="bg-danger bg-opacity-25 text-danger-emphasis p-3 rounded-circle">
-                        <i class="bi bi-box-arrow-up-right fs-4"></i>
-                    </div>
-                </div>
-            </div>
+            <x-stat-card
+                title="Total Hutang ke Supplier"
+                :value="'Rp ' . number_format($totalPayableSum, 0, ',', '.') . ''"
+                icon="shopping-cart"
+                color="danger"
+                :description="$payables->count() . ' faktur supplier belum lunas'"
+            />
         </div>
 
+        @php
+            $overdueReceivables = $receivables->filter(fn($r) => $r->status === 'jatuh_tempo' || ($r->deadline && $r->deadline->isPast() && $r->status !== 'lunas'));
+            $overduePayables = $payables->filter(fn($p) => $p->status === 'jatuh_tempo' || ($p->deadline && $p->deadline->isPast() && $p->status !== 'lunas'));
+            $totalOverdueCount = $overdueReceivables->count() + $overduePayables->count();
+        @endphp
         <div class="col-12 col-md-4">
-            @php
-                $overdueReceivables = $receivables->filter(fn($r) => $r->status === 'jatuh_tempo' || ($r->deadline && $r->deadline->isPast() && $r->status !== 'lunas'));
-                $overduePayables = $payables->filter(fn($p) => $p->status === 'jatuh_tempo' || ($p->deadline && $p->deadline->isPast() && $p->status !== 'lunas'));
-                $totalOverdueCount = $overdueReceivables->count() + $overduePayables->count();
-            @endphp
-            <div class="card card-custom p-3 border-start border-4 border-dark bg-light">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-muted small fw-semibold">TAGIHAN JATUH TEMPO</div>
-                        <h3 class="fw-bold text-danger mt-1 mb-0">{{ $totalOverdueCount }} Tagihan</h3>
-                        <small class="text-muted">{{ $overdueReceivables->count() }} piutang + {{ $overduePayables->count() }} hutang lewat tempo</small>
-                    </div>
-                    <div class="bg-dark bg-opacity-10 text-dark p-3 rounded-circle">
-                        <i class="bi bi-exclamation-octagon fs-4 text-danger"></i>
-                    </div>
-                </div>
-            </div>
+            <x-stat-card
+                title="Tagihan Jatuh Tempo"
+                :value="$totalOverdueCount . ' Tagihan'"
+                icon="alert-triangle"
+                color="danger"
+                :description="$overdueReceivables->count() . ' piutang + ' . $overduePayables->count() . ' hutang lewat tempo'"
+            />
         </div>
     </div>
 
     <!-- Tabs Nav -->
-    <ul class="nav nav-pills mb-3 gap-2" id="debtTabs" role="tablist">
+    <ul class="nav nav-pills gap-2" id="debtTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active px-4 py-2 rounded-pill fw-semibold" id="receivable-tab" data-bs-toggle="pill" data-bs-target="#receivable-content" type="button" role="tab">
-                <i class="bi bi-cash-stack me-1"></i> Piutang Pelanggan ({{ $receivables->count() }})
+            <button class="btn btn-outline-primary active rounded-pill px-4 py-2 small fw-semibold" id="receivable-tab" data-bs-toggle="pill" data-bs-target="#receivable-content" type="button" role="tab">
+                <x-icon name="credit-card" style="width: 14px; height: 14px;" class="me-1.5" /> Piutang Pelanggan ({{ $receivables->count() }})
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link px-4 py-2 rounded-pill fw-semibold" id="payable-tab" data-bs-toggle="pill" data-bs-target="#payable-content" type="button" role="tab">
-                <i class="bi bi-receipt me-1"></i> Hutang ke Supplier ({{ $payables->count() }})
+            <button class="btn btn-outline-primary rounded-pill px-4 py-2 small fw-semibold" id="payable-tab" data-bs-toggle="pill" data-bs-target="#payable-content" type="button" role="tab">
+                <x-icon name="shopping-cart" style="width: 14px; height: 14px;" class="me-1.5" /> Hutang ke Supplier ({{ $payables->count() }})
             </button>
         </li>
     </ul>
@@ -96,20 +81,20 @@
     <div class="tab-content" id="debtTabContents">
         <!-- 1. TAB PIUTANG PELANGGAN -->
         <div class="tab-pane fade show active" id="receivable-content" role="tabpanel">
-            <div class="card card-custom border-0 shadow-sm overflow-hidden">
+            <x-card :flush="true" class="p-0 overflow-hidden">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
+                    <table class="table pb-table align-middle mb-0">
+                        <thead>
                             <tr>
-                                <th>No. Nota</th>
+                                <th class="ps-4">No. Nota</th>
                                 <th>Tanggal</th>
                                 <th>Pelanggan</th>
                                 <th>Jatuh Tempo</th>
                                 <th class="text-end">Total Nota</th>
                                 <th class="text-end">Terbayar</th>
                                 <th class="text-end">Sisa Piutang</th>
-                                <th class="text-center">Status</th>
-                                <th class="text-end">Aksi</th>
+                                <th>Status</th>
+                                <th class="pe-4 text-end">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -120,81 +105,84 @@
                                     $daysPast = $pay->deadline ? (int) $pay->deadline->diffInDays(now(), false) : null;
                                 @endphp
                                 <tr>
-                                    <td>
-                                        <a href="{{ route('invoices.show', $inv->id) }}" class="fw-bold text-primary text-decoration-none font-monospace">
+                                    <td class="ps-4 nowrap">
+                                        <a href="{{ route('invoices.show', $inv->id) }}" class="fw-semibold text-primary text-decoration-none tabular-nums">
                                             {{ $inv->invoice_number }}
                                         </a>
                                     </td>
-                                    <td>
-                                        <small class="text-muted">{{ $inv->date ? $inv->date->format('d/m/Y') : '-' }}</small>
+                                    <td class="nowrap">
+                                        <span class="text-dark small tabular-nums">{{ $inv->date ? $inv->date->format('d/m/Y') : '-' }}</span>
                                     </td>
                                     <td>
-                                        <div class="fw-semibold text-dark">{{ $inv->client_name }}</div>
-                                        <span class="badge bg-secondary bg-opacity-25 text-dark small" style="font-size: 10px;">{{ strtoupper($inv->client_type) }}</span>
+                                        <div class="fw-semibold text-dark small">{{ $inv->client_name }}</div>
+                                        <x-badge variant="neutral" style="font-size: 10px;">{{ strtoupper($inv->client_type) }}</x-badge>
                                     </td>
-                                    <td>
+                                    <td class="nowrap">
                                         @if($pay->deadline)
-                                            <div class="{{ $isOverdue ? 'text-danger fw-bold' : 'text-dark' }}">
+                                            <div class="{{ $isOverdue ? 'text-danger fw-semibold' : 'text-dark' }} small tabular-nums">
                                                 {{ $pay->deadline->format('d/m/Y') }}
                                             </div>
                                             @if($isOverdue)
-                                                <small class="badge bg-danger text-white" style="font-size: 10px;">
+                                                <x-badge variant="danger" style="font-size: 10px;">
                                                     Lewat {{ abs($daysPast) }} hari
-                                                </small>
+                                                </x-badge>
                                             @else
-                                                <small class="text-muted" style="font-size: 10px;">
+                                                <small class="text-muted tabular-nums" style="font-size: 10px;">
                                                     Sisa {{ abs($daysPast) }} hari
                                                 </small>
                                             @endif
                                         @else
-                                            <span class="text-muted">-</span>
+                                            <span class="text-muted small">-</span>
                                         @endif
                                     </td>
-                                    <td class="text-end font-monospace">
+                                    <td class="text-end tabular-nums text-dark nowrap">
                                         Rp {{ number_format($inv->grand_total, 0, ',', '.') }}
                                     </td>
-                                    <td class="text-end font-monospace text-success">
+                                    <td class="text-end tabular-nums text-success nowrap">
                                         Rp {{ number_format($pay->total_paid, 0, ',', '.') }}
                                     </td>
-                                    <td class="text-end font-monospace fw-bold text-danger">
+                                    <td class="text-end tabular-nums fw-bold text-danger nowrap">
                                         Rp {{ number_format($pay->remaining_balance, 0, ',', '.') }}
                                     </td>
-                                    <td class="text-center">
+                                    <td class="nowrap">
                                         @if($pay->status === 'lunas')
-                                            <span class="badge bg-success">Lunas</span>
+                                            <x-badge variant="success">Lunas</x-badge>
                                         @elseif($isOverdue)
-                                            <span class="badge bg-danger">Jatuh Tempo</span>
+                                            <x-badge variant="danger">Jatuh Tempo</x-badge>
                                         @elseif($pay->status === 'sebagian')
-                                            <span class="badge bg-warning text-dark">Sebagian</span>
+                                            <x-badge variant="warning">Sebagian</x-badge>
                                         @else
-                                            <span class="badge bg-secondary">Belum Bayar</span>
+                                            <x-badge variant="neutral">Belum Bayar</x-badge>
                                         @endif
                                     </td>
-                                    <td class="text-end">
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{{ route('payments.show', $pay->id) }}" class="btn btn-outline-primary" title="Catat Cicilan / Riwayat">
-                                                <i class="bi bi-credit-card me-1"></i> Bayar
-                                            </a>
-                                            <a href="{{ route('invoices.show', $inv->id) }}" class="btn btn-outline-secondary" title="Lihat Nota">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
+                                    <td class="pe-4 text-end nowrap">
+                                        <div class="d-inline-flex gap-1">
+                                            <x-button href="{{ route('payments.show', $pay->id) }}" variant="outline" size="sm" title="Catat Cicilan">
+                                                <x-icon name="credit-card" style="width: 14px; height: 14px;" class="me-1" /> Cicil
+                                            </x-button>
+                                            <x-button href="{{ route('invoices.show', $inv->id) }}" variant="ghost" size="sm" title="Lihat Nota">
+                                                <x-icon name="eye" style="width: 14px; height: 14px;" />
+                                            </x-button>
                                         </div>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="text-center py-5 text-muted">
-                                        <i class="bi bi-check-circle-fill text-success fs-1 d-block mb-2"></i>
-                                        Hebat! Semua tagihan piutang pelanggan sudah lunas atau belum ada data.
+                                    <td colspan="9" class="text-center py-5">
+                                        <x-empty-state
+                                            icon="check"
+                                            title="Semua piutang pelanggan lunas!"
+                                            description="Tidak ada tagihan piutang berjalan yang belum diselesaikan pelanggan saat ini."
+                                        />
                                     </td>
                                 </tr>
                             @endforelse
                         </tbody>
                         @if($receivables->isNotEmpty())
-                        <tfoot class="table-light fw-bold font-monospace">
-                            <tr>
-                                <td colspan="4" class="text-end">TOTAL KESELURUHAN PIUTANG:</td>
-                                <td class="text-end">Rp {{ number_format($receivables->sum(fn($r) => $r->invoice->grand_total ?? 0), 0, ',', '.') }}</td>
+                        <tfoot class="border-top" style="background-color: var(--pb-bg-muted) !important;">
+                            <tr class="fw-bold tabular-nums">
+                                <td colspan="4" class="ps-4 text-end text-secondary small">TOTAL PIUTANG PELANGGAN:</td>
+                                <td class="text-end text-dark">Rp {{ number_format($receivables->sum(fn($r) => $r->invoice->grand_total ?? 0), 0, ',', '.') }}</td>
                                 <td class="text-end text-success">Rp {{ number_format($receivables->sum('total_paid'), 0, ',', '.') }}</td>
                                 <td class="text-end text-danger fs-6">Rp {{ number_format($totalReceivableSum, 0, ',', '.') }}</td>
                                 <td colspan="2"></td>
@@ -203,25 +191,25 @@
                         @endif
                     </table>
                 </div>
-            </div>
+            </x-card>
         </div>
 
         <!-- 2. TAB HUTANG KE SUPPLIER -->
         <div class="tab-pane fade" id="payable-content" role="tabpanel">
-            <div class="card card-custom border-0 shadow-sm overflow-hidden">
+            <x-card :flush="true" class="p-0 overflow-hidden">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
+                    <table class="table pb-table align-middle mb-0">
+                        <thead>
                             <tr>
-                                <th>No. Faktur</th>
+                                <th class="ps-4">No. Faktur</th>
                                 <th>Tanggal</th>
                                 <th>Supplier & Kontak</th>
                                 <th>Jatuh Tempo</th>
                                 <th class="text-end">Total Faktur</th>
                                 <th class="text-end">Terbayar</th>
                                 <th class="text-end">Sisa Hutang</th>
-                                <th class="text-center">Status</th>
-                                <th class="text-end">Aksi</th>
+                                <th>Status</th>
+                                <th class="pe-4 text-end">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -233,81 +221,84 @@
                                     $daysPast = $pay->deadline ? (int) $pay->deadline->diffInDays(now(), false) : null;
                                 @endphp
                                 <tr>
-                                    <td>
-                                        <a href="{{ route('invoice-suppliers.show', $inv->id) }}" class="fw-bold text-primary text-decoration-none font-monospace">
+                                    <td class="ps-4 nowrap">
+                                        <a href="{{ route('invoice-suppliers.show', $inv->id) }}" class="fw-semibold text-primary text-decoration-none tabular-nums">
                                             {{ $inv->invoice_number }}
                                         </a>
                                     </td>
-                                    <td>
-                                        <small class="text-muted">{{ $inv->date ? $inv->date->format('d/m/Y') : '-' }}</small>
+                                    <td class="nowrap">
+                                        <span class="text-dark small tabular-nums">{{ $inv->date ? $inv->date->format('d/m/Y') : '-' }}</span>
                                     </td>
                                     <td>
-                                        <div class="fw-semibold text-dark">{{ $sup->name ?? 'Supplier' }}</div>
-                                        <small class="text-muted">{{ $sup->phone ?? '-' }}</small>
+                                        <div class="fw-semibold text-dark small">{{ $sup->name ?? 'Supplier' }}</div>
+                                        <small class="text-muted tabular-nums">{{ $sup->phone ?? '-' }}</small>
                                     </td>
-                                    <td>
+                                    <td class="nowrap">
                                         @if($pay->deadline)
-                                            <div class="{{ $isOverdue ? 'text-danger fw-bold' : 'text-dark' }}">
+                                            <div class="{{ $isOverdue ? 'text-danger fw-semibold' : 'text-dark' }} small tabular-nums">
                                                 {{ $pay->deadline->format('d/m/Y') }}
                                             </div>
                                             @if($isOverdue)
-                                                <small class="badge bg-danger text-white" style="font-size: 10px;">
+                                                <x-badge variant="danger" style="font-size: 10px;">
                                                     Lewat {{ abs($daysPast) }} hari
-                                                </small>
+                                                </x-badge>
                                             @else
-                                                <small class="text-muted" style="font-size: 10px;">
+                                                <small class="text-muted tabular-nums" style="font-size: 10px;">
                                                     Sisa {{ abs($daysPast) }} hari
                                                 </small>
                                             @endif
                                         @else
-                                            <span class="text-muted">-</span>
+                                            <span class="text-muted small">-</span>
                                         @endif
                                     </td>
-                                    <td class="text-end font-monospace">
+                                    <td class="text-end tabular-nums text-dark nowrap">
                                         Rp {{ number_format($inv->grand_total, 0, ',', '.') }}
                                     </td>
-                                    <td class="text-end font-monospace text-success">
+                                    <td class="text-end tabular-nums text-success nowrap">
                                         Rp {{ number_format($pay->total_paid, 0, ',', '.') }}
                                     </td>
-                                    <td class="text-end font-monospace fw-bold text-danger">
+                                    <td class="text-end tabular-nums fw-bold text-danger nowrap">
                                         Rp {{ number_format($pay->remaining_balance, 0, ',', '.') }}
                                     </td>
-                                    <td class="text-center">
+                                    <td class="nowrap">
                                         @if($pay->status === 'lunas')
-                                            <span class="badge bg-success">Lunas</span>
+                                            <x-badge variant="success">Lunas</x-badge>
                                         @elseif($isOverdue)
-                                            <span class="badge bg-danger">Jatuh Tempo</span>
+                                            <x-badge variant="danger">Jatuh Tempo</x-badge>
                                         @elseif($pay->status === 'sebagian')
-                                            <span class="badge bg-warning text-dark">Sebagian</span>
+                                            <x-badge variant="warning">Sebagian</x-badge>
                                         @else
-                                            <span class="badge bg-secondary">Belum Bayar</span>
+                                            <x-badge variant="neutral">Belum Bayar</x-badge>
                                         @endif
                                     </td>
-                                    <td class="text-end">
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{{ route('payments.show', $pay->id) }}" class="btn btn-outline-danger" title="Bayar Hutang / Cicil">
-                                                <i class="bi bi-cash-coin me-1"></i> Lunasi
-                                            </a>
-                                            <a href="{{ route('invoice-suppliers.show', $inv->id) }}" class="btn btn-outline-secondary" title="Lihat Faktur">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
+                                    <td class="pe-4 text-end nowrap">
+                                        <div class="d-inline-flex gap-1">
+                                            <x-button href="{{ route('payments.show', $pay->id) }}" variant="outline" size="sm" title="Bayar Hutang">
+                                                <x-icon name="credit-card" style="width: 14px; height: 14px;" class="me-1" /> Lunasi
+                                            </x-button>
+                                            <x-button href="{{ route('invoice-suppliers.show', $inv->id) }}" variant="ghost" size="sm" title="Lihat Faktur">
+                                                <x-icon name="eye" style="width: 14px; height: 14px;" />
+                                            </x-button>
                                         </div>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="text-center py-5 text-muted">
-                                        <i class="bi bi-shield-check text-success fs-1 d-block mb-2"></i>
-                                        Tidak ada hutang ke supplier yang belum lunas. Pembukuan toko bersih!
+                                    <td colspan="9" class="text-center py-5">
+                                        <x-empty-state
+                                            icon="check"
+                                            title="Semua hutang supplier lunas!"
+                                            description="Tidak ada hutang pembelian material ke supplier yang belum diselesaikan saat ini."
+                                        />
                                     </td>
                                 </tr>
                             @endforelse
                         </tbody>
                         @if($payables->isNotEmpty())
-                        <tfoot class="table-light fw-bold font-monospace">
-                            <tr>
-                                <td colspan="4" class="text-end">TOTAL KESELURUHAN HUTANG:</td>
-                                <td class="text-end">Rp {{ number_format($payables->sum(fn($p) => $p->invoiceSupplier->grand_total ?? 0), 0, ',', '.') }}</td>
+                        <tfoot class="border-top" style="background-color: var(--pb-bg-muted) !important;">
+                            <tr class="fw-bold tabular-nums">
+                                <td colspan="4" class="ps-4 text-end text-secondary small">TOTAL HUTANG KE SUPPLIER:</td>
+                                <td class="text-end text-dark">Rp {{ number_format($payables->sum(fn($p) => $p->invoiceSupplier->grand_total ?? 0), 0, ',', '.') }}</td>
                                 <td class="text-end text-success">Rp {{ number_format($payables->sum('total_paid'), 0, ',', '.') }}</td>
                                 <td class="text-end text-danger fs-6">Rp {{ number_format($totalPayableSum, 0, ',', '.') }}</td>
                                 <td colspan="2"></td>
@@ -316,7 +307,7 @@
                         @endif
                     </table>
                 </div>
-            </div>
+            </x-card>
         </div>
     </div>
 </div>

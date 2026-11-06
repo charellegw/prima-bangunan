@@ -3,32 +3,32 @@
 @section('title', 'Laporan Pembelian Supplier — Prima Bangunan')
 
 @section('content')
-<div class="container-fluid p-0">
+<div class="d-flex flex-column gap-4">
     <!-- Header -->
-    <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
         <div class="d-flex align-items-center gap-2">
-            <a href="{{ route('reports.index') }}" class="btn btn-outline-secondary rounded-pill px-3 py-1 small">
-                <i class="bi bi-arrow-left me-1"></i> Pusat Laporan
-            </a>
+            <x-button href="{{ route('reports.index') }}" variant="secondary" size="sm">
+                <x-icon name="arrow-left" style="width: 14px; height: 14px;" class="me-1" /> Pusat Laporan
+            </x-button>
             <div>
-                <h4 class="fw-bold mb-0 text-dark">Laporan Pembelian Stok Supplier</h4>
-                <p class="text-muted small mb-0">Periode: {{ $dateFrom->format('d M Y') }} s/d {{ $dateTo->format('d M Y') }}</p>
+                <h1 class="page-title mb-0 fs-4">Laporan Pembelian Supplier</h1>
+                <p class="page-subtitle mb-0 small">Periode: {{ $dateFrom->format('d M Y') }} s/d {{ $dateTo->format('d M Y') }}</p>
             </div>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ request()->fullUrlWithQuery(['export' => 'excel']) }}" class="btn btn-success rounded-pill px-3 py-1 small fw-semibold shadow-sm">
-                <i class="bi bi-file-earmark-excel me-1"></i> Export Excel (.csv)
-            </a>
-            <a href="{{ request()->fullUrlWithQuery(['export' => 'pdf']) }}" target="_blank" class="btn btn-dark rounded-pill px-3 py-1 small fw-semibold shadow-sm">
-                <i class="bi bi-printer me-1"></i> Cetak / Export PDF
-            </a>
+            <x-button href="{{ request()->fullUrlWithQuery(['export' => 'excel']) }}" variant="outline" size="sm">
+                <x-icon name="download" style="width: 14px; height: 14px;" class="me-1" /> Export Excel
+            </x-button>
+            <x-button href="{{ request()->fullUrlWithQuery(['export' => 'pdf']) }}" target="_blank" variant="secondary" size="sm">
+                <x-icon name="printer" style="width: 14px; height: 14px;" class="me-1" /> Cetak / PDF
+            </x-button>
         </div>
     </div>
 
     <!-- Filter Card -->
-    <div class="card card-custom p-3 mb-4">
+    <x-card :flush="true" class="p-3">
         <form method="GET" action="{{ route('reports.purchases') }}" id="filterForm">
-            <div class="row g-2 align-items-center">
+            <div class="row g-2 align-items-end">
                 <!-- Periode Cepat -->
                 <div class="col-6 col-md-2">
                     <label class="form-label small text-muted mb-1" style="font-size: 11px;">Pilihan Periode:</label>
@@ -81,52 +81,52 @@
                     <input type="text" name="q" id="searchInput" value="{{ request('q') }}" placeholder="Cari..." class="form-control form-control-sm" autocomplete="off">
                 </div>
 
-                <div class="col-2 col-md-1 text-end pt-3">
-                    <button type="submit" class="btn btn-sm btn-primary-custom w-100" title="Terapkan Filter">
-                        <i class="bi bi-filter"></i>
-                    </button>
+                <div class="col-2 col-md-1 text-end">
+                    <x-button type="submit" variant="secondary" size="sm" class="w-100" title="Terapkan Filter">
+                        <x-icon name="search" style="width: 14px; height: 14px;" />
+                    </x-button>
                 </div>
             </div>
         </form>
-    </div>
+    </x-card>
 
     <!-- Summary Box -->
-    <div class="row g-3 mb-4">
+    <div class="row g-3">
         <div class="col-12 col-md-4">
-            <div class="card card-custom p-3 bg-light border">
+            <x-card class="p-3">
                 <span class="text-muted small">Total Pembelian Material:</span>
-                <span class="fs-4 fw-bold text-dark font-monospace mt-1">Rp {{ number_format($totalPurchases, 0, ',', '.') }}</span>
+                <div class="fs-4 fw-bold text-dark tabular-nums mt-1">Rp {{ number_format($totalPurchases, 0, ',', '.') }}</div>
                 <small class="text-muted">{{ $invoices->total() }} Faktur Masuk</small>
-            </div>
+            </x-card>
         </div>
         <div class="col-12 col-md-4">
-            <div class="card card-custom p-3 bg-light border">
-                <span class="text-muted small">Total Sudah Dibayar ke Supplier:</span>
-                <span class="fs-4 fw-bold text-success font-monospace mt-1">Rp {{ number_format($totalPaid, 0, ',', '.') }}</span>
-                <small class="text-success"><i class="bi bi-check2-circle"></i> Kas Keluar Toko</small>
-            </div>
+            <x-card class="p-3">
+                <span class="text-muted small">Total Kas Keluar (Terbayar):</span>
+                <div class="fs-4 fw-bold text-success tabular-nums mt-1">Rp {{ number_format($totalPaid, 0, ',', '.') }}</div>
+                <small class="text-success">Sudah dilunasi ke supplier</small>
+            </x-card>
         </div>
         <div class="col-12 col-md-4">
-            <div class="card card-custom p-3 bg-light border">
+            <x-card class="p-3">
                 <span class="text-muted small">Sisa Hutang Toko ke Supplier:</span>
-                <span class="fs-4 fw-bold text-danger font-monospace mt-1">Rp {{ number_format($totalUnpaid, 0, ',', '.') }}</span>
-                <small class="text-danger"><i class="bi bi-clock-history"></i> Kewajiban Pelunasan</small>
-            </div>
+                <div class="fs-4 fw-bold text-danger tabular-nums mt-1">Rp {{ number_format($totalUnpaid, 0, ',', '.') }}</div>
+                <small class="text-danger">Kewajiban pelunasan</small>
+            </x-card>
         </div>
     </div>
 
     <!-- Tabel Data Laporan -->
-    <div class="card card-custom p-0 overflow-hidden">
-        <div class="card-body p-0 table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light small text-secondary">
+    <x-card :flush="true" class="p-0 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table pb-table align-middle mb-0">
+                <thead>
                     <tr>
                         <th class="ps-4">No. Faktur</th>
-                        <th>Waktu Pembelian</th>
-                        <th>Nama Supplier & Lokasi</th>
-                        <th>Material yang Dipesan</th>
-                        <th class="text-end">Total Pembelian</th>
-                        <th class="text-end">Sudah Dibayar</th>
+                        <th>Waktu</th>
+                        <th>Supplier & Lokasi</th>
+                        <th>Material Dipesan</th>
+                        <th class="text-end">Total</th>
+                        <th class="text-end">Terbayar</th>
                         <th class="text-end">Sisa Hutang</th>
                         <th>Status</th>
                         <th>Jatuh Tempo</th>
@@ -136,17 +136,17 @@
                 <tbody>
                     @forelse($invoices as $inv)
                     <tr>
-                        <td class="ps-4">
-                            <a href="{{ route('invoice-suppliers.show', $inv->id) }}" class="fw-bold font-monospace text-primary text-decoration-none">
+                        <td class="ps-4 nowrap">
+                            <a href="{{ route('invoice-suppliers.show', $inv->id) }}" class="fw-semibold text-primary text-decoration-none tabular-nums">
                                 {{ $inv->invoice_number }}
                             </a>
                         </td>
-                        <td>
-                            <div class="text-dark small fw-medium">{{ $inv->date->format('d/m/Y') }}</div>
-                            <small class="text-muted">{{ $inv->date->format('H:i') }}</small>
+                        <td class="nowrap">
+                            <span class="text-dark small fw-medium tabular-nums">{{ $inv->date->format('d/m/Y') }}</span>
+                            <span class="text-muted small d-block tabular-nums">{{ $inv->date->format('H:i') }}</span>
                         </td>
                         <td>
-                            <div class="fw-bold text-dark small">{{ $inv->supplier->name ?? 'Supplier' }}</div>
+                            <div class="fw-semibold text-dark small">{{ $inv->supplier->name ?? 'Supplier' }}</div>
                             <small class="text-muted">{{ $inv->supplier->location ?? '-' }}</small>
                         </td>
                         <td>
@@ -154,51 +154,54 @@
                                 {{ $inv->invoiceSupplierDetails->map(fn($d) => ($d->item->name ?? 'Barang') . ' (' . $d->quantity . ')')->join(', ') }}
                             </div>
                         </td>
-                        <td class="text-end font-monospace fw-bold text-dark">
+                        <td class="text-end tabular-nums fw-bold text-dark nowrap">
                             Rp {{ number_format($inv->grand_total, 0, ',', '.') }}
                         </td>
-                        <td class="text-end font-monospace fw-semibold text-success">
+                        <td class="text-end tabular-nums fw-medium text-success nowrap">
                             Rp {{ number_format($inv->payment->total_paid ?? 0, 0, ',', '.') }}
                         </td>
-                        <td class="text-end font-monospace fw-bold text-danger">
+                        <td class="text-end tabular-nums fw-bold text-danger nowrap">
                             Rp {{ number_format($inv->payment->remaining_balance ?? 0, 0, ',', '.') }}
                         </td>
-                        <td>
+                        <td class="nowrap">
                             @php $status = $inv->payment->status ?? 'belum_bayar'; @endphp
                             @if($status === 'lunas')
-                                <span class="badge-lunas" style="font-size: 11px;">Lunas</span>
+                                <x-badge variant="success">Lunas</x-badge>
                             @elseif($status === 'sebagian')
-                                <span class="badge-sebagian" style="font-size: 11px;">Sebagian</span>
+                                <x-badge variant="warning">Sebagian</x-badge>
                             @elseif($status === 'jatuh_tempo')
-                                <span class="badge-jatuh-tempo" style="font-size: 11px;">Jatuh Tempo</span>
+                                <x-badge variant="danger">Jatuh Tempo</x-badge>
                             @else
-                                <span class="badge-belum-bayar" style="font-size: 11px;">Belum Bayar</span>
+                                <x-badge variant="neutral">Belum Bayar</x-badge>
                             @endif
                         </td>
-                        <td class="small">
+                        <td class="small nowrap tabular-nums">
                             {{ $inv->payment->deadline ? $inv->payment->deadline->format('d/m/Y') : '-' }}
                         </td>
-                        <td class="pe-4 text-end">
-                            <a href="{{ route('invoice-suppliers.show', $inv->id) }}" class="btn btn-sm btn-outline-primary border-0 rounded-circle" title="Buka Faktur">
-                                <i class="bi bi-eye"></i>
-                            </a>
+                        <td class="pe-4 text-end nowrap">
+                            <x-button href="{{ route('invoice-suppliers.show', $inv->id) }}" variant="ghost" size="sm" title="Buka Faktur">
+                                <x-icon name="eye" style="width: 14px; height: 14px;" />
+                            </x-button>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="10" class="text-center py-5 text-muted">
-                            <i class="bi bi-bag-x fs-1 text-secondary opacity-50 d-block mb-2"></i>
-                            Tidak ada faktur pembelian supplier pada kriteria ini.
+                        <td colspan="10" class="text-center py-5">
+                            <x-empty-state
+                                icon="shopping-cart"
+                                title="Tidak ada faktur pembelian"
+                                description="Tidak ada faktur pembelian supplier yang cocok pada rentang kriteria ini."
+                            />
                         </td>
                     </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-card>
 
     <!-- Pagination -->
-    <div class="mt-4 d-flex justify-content-center">
+    <div class="d-flex justify-content-center">
         {{ $invoices->links('pagination::bootstrap-5') }}
     </div>
 </div>

@@ -1,70 +1,62 @@
-@extends('layouts.auth')
+@extends('layouts.auth', ['title' => 'Daftar Akun — Prima Bangunan'])
 
 @section('content')
 
-<div class="d-flex align-items-center mb-4">
-    <div class="bg-primary text-white rounded-3 p-2 me-2 shadow-sm d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-        <i class="bi bi-building-fill fs-5"></i>
-    </div>
-    <div>
-        <h4 class="fw-bold mb-0 text-dark">Prima Bangunan</h4>
-        <small class="text-muted">Aplikasi Toko Bahan Bangunan & POS</small>
-    </div>
+<div class="mb-4">
+    <h4 class="fw-bold text-main mb-1" style="font-size: 22px;">Daftar Akun Baru</h4>
+    <p class="text-secondary small mb-0" style="font-size: 13px;">Buat akun baru untuk mengelola inventori, transaksi kasir, dan pengiriman.</p>
 </div>
 
-<h5 class="fw-bold text-dark mb-1">Daftar Akun Baru</h5>
-<p class="text-muted small mb-3">Buat akun untuk mengelola inventori dan transaksi toko Anda.</p>
-
 @if ($errors->any())
-    <div class="alert alert-danger py-2 rounded-3 border-0">
-        <ul class="mb-0 small ps-3">
+    <x-alert variant="danger" class="mb-3">
+        <ul class="mb-0 ps-3">
             @foreach ($errors->all() as $error)
                 <li>{{ $error }}</li>
             @endforeach
         </ul>
-    </div>
+    </x-alert>
 @endif
 
 <form method="POST" action="{{ route('register') }}">
     @csrf
 
     <div class="mb-3">
-        <label class="form-label small fw-semibold text-dark">Nama Lengkap</label>
+        <label class="pb-label">Nama Lengkap</label>
         <input type="text" name="name"
-            class="form-control form-control-lg rounded-3 fs-6"
+            class="form-control"
             placeholder="Contoh: Budi Santoso" value="{{ old('name') }}" required>
     </div>
 
     <div class="mb-3">
-        <label class="form-label small fw-semibold text-dark">Alamat Email</label>
+        <label class="pb-label">Alamat Email</label>
         <input type="email" name="email"
-            class="form-control form-control-lg rounded-3 fs-6"
+            class="form-control"
             placeholder="nama@email.com" value="{{ old('email') }}" required>
     </div>
 
     <div class="mb-3">
-        <label class="form-label small fw-semibold text-dark">Kata Sandi</label>
+        <label class="pb-label">Kata Sandi</label>
         <input type="password" name="password"
-            class="form-control form-control-lg rounded-3 fs-6"
+            class="form-control"
             placeholder="Minimal 6 karakter" required>
     </div>
 
     <div class="mb-4">
-        <label class="form-label small fw-semibold text-dark">Konfirmasi Kata Sandi</label>
+        <label class="pb-label">Konfirmasi Kata Sandi</label>
         <input type="password" name="password_confirmation"
-            class="form-control form-control-lg rounded-3 fs-6"
+            class="form-control"
             placeholder="Ulangi kata sandi" required>
     </div>
 
     <div class="d-grid mb-3">
-        <button type="submit" class="btn btn-primary btn-lg rounded-3 fw-bold fs-6 shadow-sm" style="background-color: #2563EB; border-color: #2563EB;">
+        <button type="submit" class="pb-btn pb-btn-primary pb-btn-lg">
             Daftar Sekarang
         </button>
     </div>
 
-    <p class="small text-muted text-center mb-0">
+    <p class="small text-secondary text-center mb-0" style="font-size: 13px;">
         Sudah memiliki akun?
-        <a href="{{ route('login') }}" class="fw-bold text-primary text-decoration-none">
+        <a href="{{ route('login') }}" class="fw-semibold text-primary text-decoration-none">
             Masuk ke Akun
         </a>
     </p>

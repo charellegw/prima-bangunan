@@ -1,68 +1,63 @@
-@extends('layouts.auth')
+@extends('layouts.auth', ['title' => 'Masuk — Prima Bangunan'])
 
 @section('content')
 
-<div class="d-flex align-items-center mb-4">
-    <div class="bg-primary text-white rounded-3 p-2 me-2 shadow-sm d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-        <i class="bi bi-building-fill fs-5"></i>
-    </div>
-    <div>
-        <h4 class="fw-bold mb-0 text-dark">Prima Bangunan</h4>
-        <small class="text-muted">Aplikasi Toko Bahan Bangunan & POS</small>
-    </div>
+<div class="mb-4">
+    <h4 class="fw-bold text-main mb-1" style="font-size: 22px;">Masuk ke Akun Toko</h4>
+    <p class="text-secondary small mb-0" style="font-size: 13px;">Silakan masukkan email dan kata sandi Anda untuk mengakses sistem.</p>
 </div>
 
-<h5 class="fw-bold text-dark mb-1">Masuk ke Akun Toko</h5>
-<p class="text-muted small mb-3">Silakan masukkan email dan kata sandi Anda untuk mengakses sistem.</p>
-
-<div class="alert alert-info py-2 px-3 mb-3 rounded-3 border-0 small">
-    <div class="fw-bold"><i class="bi bi-key-fill me-1"></i> Akun Demo Default:</div>
-    <div>Email: <code>admin@gmail.com</code> | Password: <code>prima3003</code></div>
+{{-- Demo Credential Banner --}}
+<div class="pb-alert pb-alert-info py-2.5 px-3 mb-3 d-flex align-items-center">
+    <div class="small">
+        <div class="fw-semibold text-primary mb-0.5" style="font-size: 12px;">Akun Demo Default:</div>
+        <div class="text-secondary" style="font-size: 12px;">Email: <strong>admin@gmail.com</strong> &bull; Sandi: <strong>prima3003</strong></div>
+    </div>
 </div>
 
 @if ($errors->any())
-    <div class="alert alert-danger py-2 rounded-3 border-0">
-        <ul class="mb-0 small ps-3">
+    <x-alert variant="danger" class="mb-3">
+        <ul class="mb-0 ps-3">
             @foreach ($errors->all() as $error)
                 <li>{{ $error }}</li>
             @endforeach
         </ul>
-    </div>
+    </x-alert>
 @endif
 
 <form method="POST" action="{{ route('login') }}">
     @csrf
 
     <div class="mb-3">
-        <label class="form-label small fw-semibold text-dark">Alamat Email</label>
+        <label class="pb-label">Alamat Email</label>
         <input type="email" name="email"
-            class="form-control form-control-lg rounded-3 fs-6"
+            class="form-control"
             placeholder="nama@email.com" value="{{ old('email', 'admin@gmail.com') }}" required>
     </div>
 
     <div class="mb-3">
-        <label class="form-label small fw-semibold text-dark">Kata Sandi</label>
+        <label class="pb-label">Kata Sandi</label>
         <input type="password" name="password"
-            class="form-control form-control-lg rounded-3 fs-6"
+            class="form-control"
             placeholder="Masukkan kata sandi" value="prima3003" required>
     </div>
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div class="form-check">
             <input class="form-check-input" type="checkbox" name="remember" id="rememberMe" checked>
-            <label class="form-check-label small text-muted" for="rememberMe">Ingat saya</label>
+            <label class="form-check-label small text-secondary" for="rememberMe" style="font-size: 13px;">Ingat saya</label>
         </div>
     </div>
 
     <div class="d-grid mb-3">
-        <button type="submit" class="btn btn-primary btn-lg rounded-3 fw-bold fs-6 shadow-sm" style="background-color: #2563EB; border-color: #2563EB;">
+        <button type="submit" class="pb-btn pb-btn-primary pb-btn-lg">
             Masuk ke Sistem
         </button>
     </div>
 
-    <p class="small text-muted text-center mb-0">
+    <p class="small text-secondary text-center mb-0" style="font-size: 13px;">
         Belum memiliki akun toko?
-        <a href="{{ route('register') }}" class="fw-bold text-primary text-decoration-none">
+        <a href="{{ route('register') }}" class="fw-semibold text-primary text-decoration-none">
             Daftar Akun Baru
         </a>
     </p>

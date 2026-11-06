@@ -3,199 +3,229 @@
 @section('title', 'Pembayaran & Tagihan — Prima Bangunan')
 
 @section('content')
-<div class="container-fluid p-0">
-    <!-- Header -->
-    <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
-        <div>
-            <h4 class="fw-bold mb-1 text-dark">Manajemen Pembayaran, Piutang & Hutang</h4>
-            <p class="text-muted small mb-0">Pantau seluruh tagihan penjualan konsumen dan kewajiban hutang dagang supplier secara real-time.</p>
-        </div>
+<!-- Page Header -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 pb-2 gap-3">
+    <div>
+        <h1 class="page-title">Manajemen Pembayaran, Piutang & Hutang</h1>
+        <p class="page-subtitle">Pantau seluruh tagihan penjualan konsumen dan kewajiban hutang dagang supplier secara real-time.</p>
     </div>
+</div>
 
-    <!-- Summary Stats -->
-    <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3">
-            <div class="card card-custom p-3 border-start border-4 border-danger">
-                <div class="text-muted small">Tagihan Jatuh Tempo</div>
-                <div class="fs-4 fw-bold text-danger mt-1">{{ $totalJatuhTempo }}</div>
-                <div class="small text-danger"><i class="bi bi-alarm-fill me-1"></i> Lewat batas waktu</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card card-custom p-3 border-start border-4 border-warning">
-                <div class="text-muted small">Dibayar Sebagian (DP)</div>
-                <div class="fs-4 fw-bold text-warning-emphasis mt-1">{{ $totalSebagian }}</div>
-                <div class="small text-muted"><i class="bi bi-hourglass-split me-1"></i> Sedang mencicil</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card card-custom p-3 border-start border-4 border-secondary">
-                <div class="text-muted small">Belum Dibayar</div>
-                <div class="fs-4 fw-bold text-dark mt-1">{{ $totalBelumBayar }}</div>
-                <div class="small text-muted"><i class="bi bi-clock me-1"></i> Belum ada pembayaran</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card card-custom p-3 border-start border-4 border-success">
-                <div class="text-muted small">Lunas Sepenuhnya</div>
-                <div class="fs-4 fw-bold text-success mt-1">{{ $totalLunas }}</div>
-                <div class="small text-success"><i class="bi bi-check2-circle me-1"></i> Selesai lunas</div>
-            </div>
-        </div>
+<!-- Summary Stats Grid -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <x-stat-card 
+            title="TAGIHAN JATUH TEMPO"
+            value="{{ $totalJatuhTempo }} Tagihan"
+            sub="Lewat batas pelunasan"
+            icon="clock"
+            badge="Perhatian"
+            badgeVariant="danger"
+            iconBg="bg-danger-subtle"
+            iconColor="text-danger"
+        />
     </div>
+    <div class="col-6 col-md-3">
+        <x-stat-card 
+            title="DIBAYAR SEBAGIAN (DP)"
+            value="{{ $totalSebagian }} Tagihan"
+            sub="Sedang mencicil"
+            icon="wallet"
+            badge="Cicilan"
+            badgeVariant="warning"
+            iconBg="bg-warning-subtle"
+            iconColor="text-warning-emphasis"
+        />
+    </div>
+    <div class="col-6 col-md-3">
+        <x-stat-card 
+            title="BELUM DIBAYAR"
+            value="{{ $totalBelumBayar }} Tagihan"
+            sub="Belum ada pembayaran"
+            icon="credit-card"
+            badge="Menunggu"
+            badgeVariant="neutral"
+            iconBg="bg-secondary-subtle"
+            iconColor="text-secondary"
+        />
+    </div>
+    <div class="col-6 col-md-3">
+        <x-stat-card 
+            title="LUNAS SEPENUHNYA"
+            value="{{ $totalLunas }} Tagihan"
+            sub="Selesai terlunasi"
+            icon="check-circle"
+            badge="Lunas"
+            badgeVariant="success"
+            iconBg="bg-success-subtle"
+            iconColor="text-success"
+        />
+    </div>
+</div>
 
-    <!-- Search & Filter Bar -->
-    <div class="card card-custom p-3 mb-4">
-        <form method="GET" action="{{ route('payments.index') }}" id="filterForm">
-            <div class="row g-2 align-items-center">
-                <!-- Search Input with Debounce -->
-                <div class="col-12 col-md-5">
-                    <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0 text-muted">
-                            <i class="bi bi-search"></i>
-                        </span>
-                        <input type="text"
-                               name="q"
-                               id="searchInput"
-                               value="{{ request('q') }}"
-                               placeholder="Cari no. invoice, nama pelanggan, nama supplier..."
-                               class="form-control border-start-0 ps-0"
-                               autocomplete="off">
-                    </div>
-                </div>
-
-                <!-- Filter Tipe Transaksi -->
-                <div class="col-6 col-md-3">
-                    <select name="type" id="typeFilter" class="form-select">
-                        <option value="">Semua Tagihan (Penjualan & Supplier)</option>
-                        <option value="sales" {{ request('type') === 'sales' ? 'selected' : '' }}>Piutang Penjualan (Customer)</option>
-                        <option value="supplier" {{ request('type') === 'supplier' ? 'selected' : '' }}>Hutang Dagang (Supplier)</option>
-                    </select>
-                </div>
-
-                <!-- Filter Status -->
-                <div class="col-6 col-md-3">
-                    <select name="status" id="statusFilter" class="form-select">
-                        <option value="">Semua Status</option>
-                        <option value="jatuh_tempo" {{ request('status') === 'jatuh_tempo' ? 'selected' : '' }}>Jatuh Tempo</option>
-                        <option value="sebagian" {{ request('status') === 'sebagian' ? 'selected' : '' }}>Sebagian</option>
-                        <option value="belum_bayar" {{ request('status') === 'belum_bayar' ? 'selected' : '' }}>Belum Bayar</option>
-                        <option value="lunas" {{ request('status') === 'lunas' ? 'selected' : '' }}>Lunas</option>
-                    </select>
-                </div>
-
-                <!-- Reset Button -->
-                <div class="col-12 col-md-1 text-end">
-                    @if(request()->anyFilled(['q', 'type', 'status']))
-                        <a href="{{ route('payments.index') }}" class="btn btn-outline-secondary w-100" title="Reset Filter">
-                            <i class="bi bi-x-lg"></i>
-                        </a>
-                    @endif
+<!-- Search & Filter Bar -->
+<div class="pb-card p-3 mb-4">
+    <form method="GET" action="{{ route('payments.index') }}" id="filterForm">
+        <div class="row g-2 align-items-center">
+            <!-- Search Input with Debounce -->
+            <div class="col-12 col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted ps-3">
+                        <x-icon name="search" size="16" />
+                    </span>
+                    <input type="text"
+                           name="q"
+                           id="searchInput"
+                           value="{{ request('q') }}"
+                           placeholder="Cari no. invoice, nama pelanggan, supplier..."
+                           class="form-control border-start-0 ps-2"
+                           autocomplete="off">
                 </div>
             </div>
-        </form>
-    </div>
 
-    <!-- Tabel Daftar Pembayaran -->
-    <div class="card card-custom p-0 overflow-hidden">
-        <div class="card-body p-0 table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light small text-secondary">
-                    <tr>
-                        <th class="ps-4">No. Dokumen</th>
-                        <th>Jenis Transaksi</th>
-                        <th>Pihak Terkait</th>
-                        <th>Total Tagihan</th>
-                        <th>Sudah Dibayar</th>
-                        <th>Sisa Tagihan</th>
-                        <th>Jatuh Tempo</th>
-                        <th>Status</th>
-                        <th class="pe-4 text-end">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($payments as $pay)
-                    <tr>
-                        <td class="ps-4">
-                            @if($pay->invoice)
-                                <a href="{{ route('invoices.show', $pay->invoice->id) }}" class="fw-bold font-monospace text-primary text-decoration-none">
-                                    {{ $pay->invoice->invoice_number }}
-                                </a>
-                            @elseif($pay->invoiceSupplier)
-                                <a href="{{ route('invoice-suppliers.show', $pay->invoiceSupplier->id) }}" class="fw-bold font-monospace text-primary text-decoration-none">
-                                    {{ $pay->invoiceSupplier->invoice_number }}
-                                </a>
-                            @else
-                                <span class="font-monospace text-muted">-</span>
-                            @endif
-                        </td>
-                        <td>
-                            @if($pay->invoice)
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
-                                    <i class="bi bi-cart-check me-1"></i> Penjualan (Piutang)
-                                </span>
-                            @elseif($pay->invoiceSupplier)
-                                <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-2 py-1">
-                                    <i class="bi bi-box-arrow-in-down me-1"></i> Supplier (Hutang)
-                                </span>
-                            @endif
-                        </td>
-                        <td>
-                            @if($pay->invoice)
-                                <div class="fw-bold text-dark">{{ $pay->invoice->client_name }}</div>
-                                <small class="text-muted">Pelanggan {{ $pay->invoice->client_type }}</small>
-                            @elseif($pay->invoiceSupplier)
-                                <div class="fw-bold text-dark">{{ $pay->invoiceSupplier->supplier->name ?? 'Supplier' }}</div>
-                                <small class="text-muted">Penyedia Material</small>
-                            @endif
-                        </td>
-                        <td class="fw-bold text-dark font-monospace">Rp {{ number_format($pay->amount_total, 0, ',', '.') }}</td>
-                        <td class="fw-semibold text-success font-monospace">Rp {{ number_format($pay->total_paid, 0, ',', '.') }}</td>
-                        <td class="fw-bold text-danger font-monospace">Rp {{ number_format($pay->remaining_balance, 0, ',', '.') }}</td>
-                        <td>
-                            @if($pay->deadline)
-                                <div class="small fw-medium {{ $pay->status === 'jatuh_tempo' ? 'text-danger fw-bold' : 'text-dark' }}">
-                                    {{ $pay->deadline->format('d M Y') }}
-                                </div>
-                                <small class="text-muted">{{ $pay->deadline->diffForHumans() }}</small>
-                            @else
-                                <span class="text-muted">-</span>
-                            @endif
-                        </td>
-                        <td>
-                            @if($pay->status === 'lunas')
-                                <span class="badge-lunas"><i class="bi bi-check-circle me-1"></i> Lunas</span>
-                            @elseif($pay->status === 'sebagian')
-                                <span class="badge-sebagian"><i class="bi bi-hourglass-split me-1"></i> Sebagian</span>
-                            @elseif($pay->status === 'jatuh_tempo')
-                                <span class="badge-jatuh-tempo"><i class="bi bi-exclamation-triangle me-1"></i> Jatuh Tempo</span>
-                            @else
-                                <span class="badge-belum-bayar"><i class="bi bi-x-circle me-1"></i> Belum Bayar</span>
-                            @endif
-                        </td>
-                        <td class="pe-4 text-end">
-                            <a href="{{ route('payments.show', $pay->id) }}" class="btn btn-sm btn-light border rounded-pill px-3 fw-semibold">
-                                <i class="bi bi-cash-coin me-1"></i> Riwayat
+            <!-- Filter Tipe Transaksi -->
+            <div class="col-6 col-md-3">
+                <select name="type" id="typeFilter" class="form-select">
+                    <option value="">Semua Tagihan (Penjualan & Supplier)</option>
+                    <option value="sales" {{ request('type') === 'sales' ? 'selected' : '' }}>Piutang Penjualan (Customer)</option>
+                    <option value="supplier" {{ request('type') === 'supplier' ? 'selected' : '' }}>Hutang Dagang (Supplier)</option>
+                </select>
+            </div>
+
+            <!-- Filter Status -->
+            <div class="col-6 col-md-3">
+                <select name="status" id="statusFilter" class="form-select">
+                    <option value="">Semua Status</option>
+                    <option value="jatuh_tempo" {{ request('status') === 'jatuh_tempo' ? 'selected' : '' }}>Jatuh Tempo</option>
+                    <option value="sebagian" {{ request('status') === 'sebagian' ? 'selected' : '' }}>Sebagian</option>
+                    <option value="belum_bayar" {{ request('status') === 'belum_bayar' ? 'selected' : '' }}>Belum Bayar</option>
+                    <option value="lunas" {{ request('status') === 'lunas' ? 'selected' : '' }}>Lunas</option>
+                </select>
+            </div>
+
+            <!-- Reset Button -->
+            <div class="col-12 col-md-1 d-flex">
+                @if(request()->anyFilled(['q', 'type', 'status']))
+                    <a href="{{ route('payments.index') }}" class="pb-btn pb-btn-secondary w-100" title="Reset Filter">
+                        <x-icon name="x" size="16" />
+                    </a>
+                @endif
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Tabel Daftar Pembayaran -->
+<div class="pb-table-card">
+    <div class="table-responsive">
+        <table class="pb-table">
+            <thead>
+                <tr>
+                    <th>No. Dokumen</th>
+                    <th>Jenis Transaksi</th>
+                    <th>Pihak Terkait</th>
+                    <th class="text-end">Total Tagihan</th>
+                    <th class="text-end">Sudah Dibayar</th>
+                    <th class="text-end">Sisa Tagihan</th>
+                    <th>Jatuh Tempo</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-end">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($payments as $pay)
+                <tr>
+                    <td class="nowrap">
+                        @if($pay->invoice)
+                            <a href="{{ route('invoices.show', $pay->invoice->id) }}" class="fw-semibold text-primary text-decoration-none tabular-nums">
+                                {{ $pay->invoice->invoice_number }}
                             </a>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="9" class="text-center py-5 text-muted">
-                            <i class="bi bi-credit-card fs-1 text-secondary opacity-50 d-block mb-2"></i>
-                            Tidak ada data tagihan atau pembayaran yang cocok.
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                        @elseif($pay->invoiceSupplier)
+                            <a href="{{ route('invoice-suppliers.show', $pay->invoiceSupplier->id) }}" class="fw-semibold text-primary text-decoration-none tabular-nums">
+                                {{ $pay->invoiceSupplier->invoice_number }}
+                            </a>
+                        @else
+                            <span class="text-muted tabular-nums">-</span>
+                        @endif
+                    </td>
+                    <td>
+                        @if($pay->invoice)
+                            <x-badge variant="info" size="sm">
+                                <x-icon name="shopping-cart" size="12" class="me-1" /> Piutang Konsumen
+                            </x-badge>
+                        @elseif($pay->invoiceSupplier)
+                            <x-badge variant="warning" size="sm">
+                                <x-icon name="bag-plus" size="12" class="me-1" /> Hutang Supplier
+                            </x-badge>
+                        @endif
+                    </td>
+                    <td>
+                        @if($pay->invoice)
+                            <div class="fw-semibold text-main">{{ $pay->invoice->client_name }}</div>
+                            <div class="text-secondary small" style="font-size: 11.5px;">Pelanggan {{ $pay->invoice->client_type }}</div>
+                        @elseif($pay->invoiceSupplier)
+                            <div class="fw-semibold text-main">{{ $pay->invoiceSupplier->supplier->name ?? 'Supplier' }}</div>
+                            <div class="text-secondary small" style="font-size: 11.5px;">Penyedia Material</div>
+                        @endif
+                    </td>
+                    <td class="text-end fw-bold text-main nowrap tabular-nums">
+                        Rp {{ number_format($pay->amount_total, 0, ',', '.') }}
+                    </td>
+                    <td class="text-end fw-semibold text-success nowrap tabular-nums">
+                        Rp {{ number_format($pay->total_paid, 0, ',', '.') }}
+                    </td>
+                    <td class="text-end fw-bold text-danger nowrap tabular-nums">
+                        Rp {{ number_format($pay->remaining_balance, 0, ',', '.') }}
+                    </td>
+                    <td class="nowrap">
+                        @if($pay->deadline)
+                            <div class="small fw-semibold {{ $pay->status === 'jatuh_tempo' ? 'text-danger' : 'text-main' }}">
+                                {{ $pay->deadline->format('d M Y') }}
+                            </div>
+                            <small class="text-muted" style="font-size: 11px;">{{ $pay->deadline->diffForHumans() }}</small>
+                        @else
+                            <span class="text-muted">-</span>
+                        @endif
+                    </td>
+                    <td class="text-center nowrap">
+                        @if($pay->status === 'lunas')
+                            <x-badge variant="success">Lunas</x-badge>
+                        @elseif($pay->status === 'sebagian')
+                            <x-badge variant="warning">Sebagian</x-badge>
+                        @elseif($pay->status === 'jatuh_tempo')
+                            <x-badge variant="danger">Jatuh Tempo</x-badge>
+                        @else
+                            <x-badge variant="neutral">Belum Bayar</x-badge>
+                        @endif
+                    </td>
+                    <td class="text-end nowrap">
+                        <x-button :href="route('payments.show', $pay->id)" variant="outline" size="sm" icon="credit-card">
+                            Riwayat
+                        </x-button>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="9">
+                        <x-empty-state 
+                            icon="credit-card"
+                            title="Tidak ada data pembayaran"
+                            description="Belum ada data tagihan atau pembayaran yang sesuai dengan filter pencarian Anda."
+                            actionLabel="Reset Pencarian"
+                            :actionUrl="route('payments.index')"
+                            actionIcon="arrow-left"
+                        />
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
+</div>
 
-    <!-- Pagination -->
-    <div class="mt-4 d-flex justify-content-center">
-        {{ $payments->links('pagination::bootstrap-5') }}
-    </div>
+<!-- Pagination -->
+<div class="mt-4 d-flex justify-content-center">
+    {{ $payments->links('pagination::bootstrap-5') }}
 </div>
 @endsection
 

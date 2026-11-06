@@ -3,32 +3,32 @@
 @section('title', 'Laporan Mutasi & Riwayat Stok — Prima Bangunan')
 
 @section('content')
-<div class="container-fluid p-0">
+<div class="d-flex flex-column gap-4">
     <!-- Header -->
-    <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
         <div class="d-flex align-items-center gap-2">
-            <a href="{{ route('reports.index') }}" class="btn btn-outline-secondary rounded-pill px-3 py-1 small">
-                <i class="bi bi-arrow-left me-1"></i> Pusat Laporan
-            </a>
+            <x-button href="{{ route('reports.index') }}" variant="secondary" size="sm">
+                <x-icon name="arrow-left" style="width: 14px; height: 14px;" class="me-1" /> Pusat Laporan
+            </x-button>
             <div>
-                <h4 class="fw-bold mb-0 text-dark">Laporan Mutasi & Nilai Aset Stok</h4>
-                <p class="text-muted small mb-0">Periode Pergerakan: {{ $dateFrom->format('d M Y') }} s/d {{ $dateTo->format('d M Y') }}</p>
+                <h1 class="page-title mb-0 fs-4">Laporan Mutasi & Nilai Stok</h1>
+                <p class="page-subtitle mb-0 small">Periode: {{ $dateFrom->format('d M Y') }} s/d {{ $dateTo->format('d M Y') }}</p>
             </div>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ request()->fullUrlWithQuery(['export' => 'excel']) }}" class="btn btn-success rounded-pill px-3 py-1 small fw-semibold shadow-sm">
-                <i class="bi bi-file-earmark-excel me-1"></i> Export Excel (.csv)
-            </a>
-            <a href="{{ request()->fullUrlWithQuery(['export' => 'pdf']) }}" target="_blank" class="btn btn-dark rounded-pill px-3 py-1 small fw-semibold shadow-sm">
-                <i class="bi bi-printer me-1"></i> Cetak / Export PDF
-            </a>
+            <x-button href="{{ request()->fullUrlWithQuery(['export' => 'excel']) }}" variant="outline" size="sm">
+                <x-icon name="download" style="width: 14px; height: 14px;" class="me-1" /> Export Excel
+            </x-button>
+            <x-button href="{{ request()->fullUrlWithQuery(['export' => 'pdf']) }}" target="_blank" variant="secondary" size="sm">
+                <x-icon name="printer" style="width: 14px; height: 14px;" class="me-1" /> Cetak / PDF
+            </x-button>
         </div>
     </div>
 
     <!-- Filter Card -->
-    <div class="card card-custom p-3 mb-4">
+    <x-card :flush="true" class="p-3">
         <form method="GET" action="{{ route('reports.stock') }}" id="filterForm">
-            <div class="row g-2 align-items-center">
+            <div class="row g-2 align-items-end">
                 <!-- Periode Cepat -->
                 <div class="col-6 col-md-2">
                     <label class="form-label small text-muted mb-1" style="font-size: 11px;">Periode Mutasi:</label>
@@ -80,63 +80,63 @@
                     <input type="text" name="q" id="searchInput" value="{{ request('q') }}" placeholder="Cari..." class="form-control form-control-sm" autocomplete="off">
                 </div>
 
-                <div class="col-2 col-md-1 text-end pt-3">
-                    <button type="submit" class="btn btn-sm btn-primary-custom w-100" title="Terapkan Filter">
-                        <i class="bi bi-filter"></i>
-                    </button>
+                <div class="col-2 col-md-1 text-end">
+                    <x-button type="submit" variant="secondary" size="sm" class="w-100" title="Terapkan Filter">
+                        <x-icon name="search" style="width: 14px; height: 14px;" />
+                    </x-button>
                 </div>
             </div>
         </form>
-    </div>
+    </x-card>
 
     <!-- Summary Box -->
-    <div class="row g-3 mb-4">
+    <div class="row g-3">
         <div class="col-12 col-sm-6 col-md-3">
-            <div class="card card-custom p-3 bg-light border">
-                <span class="text-muted small">Total Persediaan Fisik:</span>
-                <span class="fs-4 fw-bold text-dark font-monospace mt-1">{{ number_format($totalStockUnits, 0, ',', '.') }}</span>
+            <x-card class="p-3">
+                <span class="text-muted small">Total Fisik Persediaan:</span>
+                <div class="fs-4 fw-bold text-dark tabular-nums mt-1">{{ number_format($totalStockUnits, 0, ',', '.') }} unit</div>
                 <small class="text-muted">{{ $stockReportData->count() }} Jenis Material</small>
-            </div>
+            </x-card>
         </div>
         <div class="col-12 col-sm-6 col-md-3">
-            <div class="card card-custom p-3 bg-light border">
+            <x-card class="p-3">
                 <span class="text-muted small">Barang Masuk (Supplier):</span>
-                <span class="fs-4 fw-bold text-success font-monospace mt-1">+{{ number_format($totalReceivedUnits, 0, ',', '.') }}</span>
-                <small class="text-success"><i class="bi bi-box-arrow-in-down"></i> Masuk Gudang</small>
-            </div>
+                <div class="fs-4 fw-bold text-success tabular-nums mt-1">+{{ number_format($totalReceivedUnits, 0, ',', '.') }}</div>
+                <small class="text-success">Unit restock gudang</small>
+            </x-card>
         </div>
         <div class="col-12 col-sm-6 col-md-3">
-            <div class="card card-custom p-3 bg-light border">
-                <span class="text-muted small">Barang Keluar (Penjualan):</span>
-                <span class="fs-4 fw-bold text-primary font-monospace mt-1">-{{ number_format($totalSoldUnits, 0, ',', '.') }}</span>
-                <small class="text-primary"><i class="bi bi-cart-check"></i> Terjual ke Konsumen</small>
-            </div>
+            <x-card class="p-3">
+                <span class="text-muted small">Barang Keluar (Terjual):</span>
+                <div class="fs-4 fw-bold text-primary tabular-nums mt-1">-{{ number_format($totalSoldUnits, 0, ',', '.') }}</div>
+                <small class="text-primary">Terjual ke konsumen</small>
+            </x-card>
         </div>
         <div class="col-12 col-sm-6 col-md-3">
-            <div class="card card-custom p-3 bg-light border">
-                <span class="text-muted small">Estimasi Nilai Aset Stok:</span>
-                <span class="fs-4 fw-bold text-success font-monospace mt-1">Rp {{ number_format($totalValuation, 0, ',', '.') }}</span>
-                <small class="text-muted">Total Nilai Persediaan</small>
-            </div>
+            <x-card class="p-3">
+                <span class="text-muted small">Estimasi Valuasi Aset:</span>
+                <div class="fs-4 fw-bold text-success tabular-nums mt-1">Rp {{ number_format($totalValuation, 0, ',', '.') }}</div>
+                <small class="text-muted">Total nilai persediaan</small>
+            </x-card>
         </div>
     </div>
 
     <!-- Tabel Mutasi Stok -->
-    <div class="card card-custom p-0 overflow-hidden">
-        <div class="card-body p-0 table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light small text-secondary">
+    <x-card :flush="true" class="p-0 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table pb-table align-middle mb-0">
+                <thead>
                     <tr>
                         <th class="ps-4">No.</th>
-                        <th>Nama Barang Material</th>
+                        <th>Barang Material</th>
                         <th>Kategori</th>
-                        <th class="text-center">Masuk (Supplier)</th>
-                        <th class="text-center">Keluar (Terjual)</th>
-                        <th class="text-center">Sisa Stok Kini</th>
-                        <th class="text-end">Harga Modal (Avg)</th>
-                        <th class="text-end">Estimasi Nilai Aset</th>
-                        <th class="text-end">Harga Eceran (Orang)</th>
-                        <th class="text-end">Harga Grosir (Retail)</th>
+                        <th class="text-center">Masuk (Beli)</th>
+                        <th class="text-center">Keluar (Jual)</th>
+                        <th class="text-center">Sisa Stok</th>
+                        <th class="text-end">Modal (Avg)</th>
+                        <th class="text-end">Nilai Aset</th>
+                        <th class="text-end">Harga Eceran</th>
+                        <th class="text-end">Harga Grosir</th>
                         <th class="pe-4 text-end">Aksi</th>
                     </tr>
                 </thead>
@@ -144,79 +144,76 @@
                     @forelse($stockReportData as $idx => $row)
                     @php $item = $row['item']; @endphp
                     <tr>
-                        <td class="ps-4 text-muted small">{{ $idx + 1 }}</td>
+                        <td class="ps-4 text-muted small tabular-nums">{{ $idx + 1 }}</td>
                         <td>
-                            <div class="fw-bold text-dark small">
+                            <div class="fw-semibold text-dark small">
                                 <a href="{{ route('item.show', $item->id) }}" class="text-decoration-none text-dark hover-primary">
                                     {{ $item->name }}
                                 </a>
                             </div>
                             @if($item->brand)
-                                <small class="text-muted">Merek: {{ $item->brand }}</small>
+                                <small class="text-muted">{{ $item->brand }}</small>
                             @endif
                         </td>
-                        <td>
-                            <span class="badge bg-light text-secondary border" style="font-size: 11px;">
-                                {{ $item->category->name ?? 'Material Umum' }}
-                            </span>
+                        <td class="nowrap">
+                            <x-badge variant="neutral">{{ $item->category->name ?? 'Material Umum' }}</x-badge>
                         </td>
-                        <td class="text-center">
+                        <td class="text-center nowrap">
                             @if($row['qty_received'] > 0)
-                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 font-monospace">
-                                    +{{ $row['qty_received'] }}
-                                </span>
+                                <x-badge variant="success" class="tabular-nums">+{{ $row['qty_received'] }}</x-badge>
                             @else
-                                <span class="text-muted">-</span>
+                                <span class="text-muted small">-</span>
                             @endif
                         </td>
-                        <td class="text-center">
+                        <td class="text-center nowrap">
                             @if($row['qty_sold'] > 0)
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 font-monospace">
-                                    -{{ $row['qty_sold'] }}
-                                </span>
+                                <x-badge variant="info" class="tabular-nums">-{{ $row['qty_sold'] }}</x-badge>
                             @else
-                                <span class="text-muted">-</span>
+                                <span class="text-muted small">-</span>
                             @endif
                         </td>
-                        <td class="text-center">
+                        <td class="text-center nowrap">
                             @if($item->stock <= 0)
-                                <span class="badge bg-danger text-white px-2 py-1">Habis (0)</span>
+                                <x-badge variant="danger">Habis (0)</x-badge>
                             @elseif($item->stock <= 10)
-                                <span class="badge bg-warning text-dark px-2 py-1">Sisa {{ $item->stock }}</span>
+                                <x-badge variant="warning">Sisa {{ $item->stock }}</x-badge>
                             @else
-                                <span class="badge bg-light text-dark border px-2 py-1 fw-bold">{{ $item->stock }} unit</span>
+                                <x-badge variant="neutral" class="fw-semibold">{{ $item->stock }} unit</x-badge>
                             @endif
                         </td>
-                        <td class="text-end font-monospace small">
+                        <td class="text-end tabular-nums small text-secondary nowrap">
                             Rp {{ number_format($row['cost_price'], 0, ',', '.') }}
                         </td>
-                        <td class="text-end font-monospace fw-bold text-success small">
+                        <td class="text-end tabular-nums fw-bold text-success small nowrap">
                             Rp {{ number_format($row['valuation'], 0, ',', '.') }}
                         </td>
-                        <td class="text-end font-monospace text-primary small">
+                        <td class="text-end tabular-nums text-primary small nowrap">
                             Rp {{ number_format($item->price, 0, ',', '.') }}
                         </td>
-                        <td class="text-end font-monospace text-success small">
+                        <td class="text-end tabular-nums text-success small nowrap">
                             Rp {{ number_format($item->retail_price, 0, ',', '.') }}
                         </td>
-                        <td class="pe-4 text-end">
-                            <a href="{{ route('item.show', $item->id) }}" class="btn btn-sm btn-light border rounded-pill px-2 py-1" title="Lihat Detail & Supplier">
-                                <i class="bi bi-box-arrow-up-right"></i>
-                            </a>
+                        <td class="pe-4 text-end nowrap">
+                            <x-button href="{{ route('item.show', $item->id) }}" variant="ghost" size="sm" title="Lihat Detail & Supplier">
+                                <x-icon name="eye" style="width: 14px; height: 14px;" />
+                            </x-button>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="11" class="text-center py-5 text-muted">
-                            <i class="bi bi-boxes fs-1 text-secondary opacity-50 d-block mb-2"></i>
-                            Tidak ada barang material yang cocok dengan filter.
+                        <td colspan="11" class="text-center py-5">
+                            <x-empty-state
+                                icon="box"
+                                title="Tidak ada barang material"
+                                description="Tidak ada barang material yang cocok dengan filter pencarian stok Anda."
+                            />
                         </td>
                     </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-    </div>
+    </x-card>
 </div>
 @endsection
 
