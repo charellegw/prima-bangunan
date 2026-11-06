@@ -16,11 +16,14 @@
         <div class="d-flex gap-2">
             @if($invoice->payment && $invoice->payment->remaining_balance > 0)
                 <button type="button" class="btn btn-success rounded-pill px-3 py-1 small fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCatatPembayaran">
-                    <i class="bi bi-cash-coin me-1"></i> Catat Pembayaran / Pelunasan
+                    <i class="bi bi-cash-coin me-1"></i> Catat Pembayaran
                 </button>
             @endif
+            <a href="{{ route('invoices.receipt', $invoice->id) }}" target="_blank" class="btn btn-dark rounded-pill px-3 py-1 small fw-semibold shadow-sm">
+                <i class="bi bi-receipt-cutoff me-1"></i> Cetak Struk Belanja (POS)
+            </a>
             <button type="button" class="btn btn-primary-custom rounded-pill px-3 py-1 small fw-semibold shadow-sm" onclick="window.print()">
-                <i class="bi bi-printer me-1"></i> Cetak Nota
+                <i class="bi bi-printer me-1"></i> Cetak Nota A4
             </button>
         </div>
     </div>

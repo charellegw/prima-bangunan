@@ -120,24 +120,43 @@ class InvoiceService
                 ]);
             }
 
-            // 4. Pembayaran Awal / Kasir (opsional saat checkout)
-            $initialPaid = (float) ($data['initial_paid'] ?? 0);
-            if ($initialPaid > 0) {
-                if ($initialPaid > $calculatedGrandTotal) {
-                    throw new Exception("Nominal pembayaran awal (Rp " . number_format($initialPaid, 0, ',', '.') . ") melebihi total belanja (Rp " . number_format($calculatedGrandTotal, 0, ',', '.') . ").");
-                }
-
-                PaymentHistory::create([
-                    'payment_id' => $payment->id,
-                    'date' => Carbon::now(),
-                    'amount' => $initialPaid,
-                    'method' => $data['payment_method'] ?? 'cash',
+            // 4. Pembayaran Awal / Kasir (Mendukung Split Payment atau Single Payment)
+            $paymentsList = $data['payments'] ?? [];
+            if (empty($paymentsList) && !empty($data['initial_paid']) && (float)$data['initial_paid'] > 0) {
+                $paymentsList[] = [
+                    'amount' => (float)$data['initial_paid'],
+                    'method' => $data['payment_method'] ?? 'Tunai (Cash)',
                     'note' => $data['payment_note'] ?? 'Pembayaran saat transaksi kasir',
-                ]);
-
-                // Recalculate status payment
-                $payment->recalculateStatus();
+                ];
             }
+
+            $totalPaidSum = 0;
+            foreach ($paymentsList as $payItem) {
+                $payAmount = (float)($payItem['amount'] ?? 0);
+                if ($payAmount > 0) {
+                    $totalPaidSum += $payAmount;
+                }
+            }
+
+            if ($totalPaidSum > $calculatedGrandTotal) {
+                throw new Exception("Total pembayaran (Rp " . number_format($totalPaidSum, 0, ',', '.') . ") melebihi total belanja (Rp " . number_format($calculatedGrandTotal, 0, ',', '.') . ").");
+            }
+
+            foreach ($paymentsList as $payItem) {
+                $payAmount = (float)($payItem['amount'] ?? 0);
+                if ($payAmount > 0) {
+                    PaymentHistory::create([
+                        'payment_id' => $payment->id,
+                        'date' => Carbon::now(),
+                        'amount' => $payAmount,
+                        'method' => $payItem['method'] ?? 'Tunai (Cash)',
+                        'note' => $payItem['note'] ?? 'Pembayaran saat checkout kasir',
+                    ]);
+                }
+            }
+
+            // Recalculate status payment
+            $payment->recalculateStatus();
 
             // 5. Opsi Buat Pengiriman (Shipment)
             if (!empty($data['needs_shipment']) && !empty($data['shipment_address'])) {

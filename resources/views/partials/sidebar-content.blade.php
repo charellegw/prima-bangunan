@@ -65,6 +65,14 @@
         </a>
     </li>
 
+    <li class="nav-item">
+        <a href="{{ route('reports.index') }}"
+           class="nav-link d-flex align-items-center px-3 py-2 {{ request()->routeIs('reports.*') ? 'active fw-bold text-white' : '' }}">
+            <i class="bi bi-file-earmark-bar-graph-fill me-2 fs-6"></i>
+            <span>Laporan & Rekap</span>
+        </a>
+    </li>
+
     <hr class="text-white-50 my-3">
 
     <li class="nav-item">

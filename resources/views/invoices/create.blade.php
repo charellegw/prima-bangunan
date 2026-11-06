@@ -161,32 +161,69 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-dark">Pembayaran Awal / Uang Diterima (Rp)</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-white">Rp</span>
-                            <input type="number" name="initial_paid" id="initialPaidInput" class="form-control fw-bold fs-6" min="0" value="0">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small fw-semibold text-dark mb-0">Pembayaran Kasir / Uang Diterima (Rp)</label>
+                            <div class="form-check form-switch m-0" style="font-size: 11px;">
+                                <input class="form-check-input" type="checkbox" id="switchSplitPayment">
+                                <label class="form-check-label text-muted" for="switchSplitPayment">Split Payment</label>
+                            </div>
                         </div>
+
+                        <!-- Single Payment Box -->
+                        <div id="singlePaymentBox">
+                            <div class="input-group mb-2">
+                                <span class="input-group-text bg-white">Rp</span>
+                                <input type="number" name="initial_paid" id="initialPaidInput" class="form-control fw-bold fs-6" min="0" value="0">
+                            </div>
+                            <div class="mb-2">
+                                <select name="payment_method" id="paymentMethodSelect" class="form-select form-select-sm">
+                                    <option value="Tunai (Cash)">Tunai (Cash)</option>
+                                    <option value="QRIS">QRIS</option>
+                                    <option value="Transfer Bank BCA">Transfer Bank BCA</option>
+                                    <option value="Transfer Bank Mandiri">Transfer Bank Mandiri</option>
+                                    <option value="Giro / Cek">Giro / Cek</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Split Payment Box (Multi Payment: Tunai + Transfer / QRIS) -->
+                        <div id="splitPaymentBox" class="p-2 bg-light rounded-3 border mb-2" style="display: none;">
+                            <div class="small fw-bold text-dark mb-2"><i class="bi bi-wallet2 me-1 text-primary"></i> Rincian Pembayaran Majemuk:</div>
+                            <div class="mb-2">
+                                <label class="text-muted" style="font-size: 11px;">1. Pembayaran Tunai (Cash)</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="number" name="payments[0][amount]" id="splitCashInput" class="form-control fw-bold split-pay-input" min="0" value="0">
+                                    <input type="hidden" name="payments[0][method]" value="Tunai (Cash)">
+                                </div>
+                            </div>
+                            <div class="mb-1">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="text-muted" style="font-size: 11px;">2. Pembayaran Non-Tunai</label>
+                                    <select name="payments[1][method]" class="form-select form-select-sm py-0 px-1" style="width: 140px; font-size: 11px;">
+                                        <option value="QRIS">QRIS</option>
+                                        <option value="Transfer Bank BCA">Transfer BCA</option>
+                                        <option value="Transfer Bank Mandiri">Transfer Mandiri</option>
+                                        <option value="Giro / Cek">Giro</option>
+                                    </select>
+                                </div>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">Rp</span>
+                                    <input type="number" name="payments[1][amount]" id="splitNonCashInput" class="form-control fw-bold split-pay-input" min="0" value="0">
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="d-flex gap-1 mt-1">
                             <button type="button" class="btn btn-sm btn-light border py-0 px-2 small" id="btnPayFull">Bayar Lunas</button>
-                            <button type="button" class="btn btn-sm btn-light border py-0 px-2 small" id="btnPayZero">Belum Bayar (Hutang)</button>
+                            <button type="button" class="btn btn-sm btn-light border py-0 px-2 small" id="btnPayZero">Belum Bayar (Bon/Kredit)</button>
                         </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-dark">Metode Pembayaran</label>
-                        <select name="payment_method" class="form-select">
-                            <option value="Tunai (Cash)">Tunai (Cash)</option>
-                            <option value="Transfer Bank BCA">Transfer Bank BCA</option>
-                            <option value="Transfer Bank Mandiri">Transfer Bank Mandiri</option>
-                            <option value="QRIS">QRIS</option>
-                            <option value="Giro / Cek">Giro / Cek</option>
-                        </select>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label small fw-semibold text-dark">Tenggat Waktu / Jatuh Tempo</label>
                         <input type="date" name="deadline" class="form-control" value="{{ date('Y-m-d', strtotime('+14 days')) }}">
-                        <small class="text-muted" style="font-size: 11px;">Batas waktu pelunasan bila pembayaran belum lunas.</small>
+                        <small class="text-muted" style="font-size: 11px;">Batas waktu pelunasan jika ada sisa tagihan (bon).</small>
                     </div>
 
                     <div class="p-3 rounded-3 mb-4 border bg-white">
@@ -229,6 +266,40 @@
         const switchShipment = document.getElementById('switchShipment');
         const shipmentFormSection = document.getElementById('shipmentFormSection');
         const shipmentAddressInput = document.getElementById('shipmentAddressInput');
+
+        const switchSplitPayment = document.getElementById('switchSplitPayment');
+        const singlePaymentBox = document.getElementById('singlePaymentBox');
+        const splitPaymentBox = document.getElementById('splitPaymentBox');
+        const splitCashInput = document.getElementById('splitCashInput');
+        const splitNonCashInput = document.getElementById('splitNonCashInput');
+
+        let isSplitMode = false;
+
+        if (switchSplitPayment) {
+            switchSplitPayment.addEventListener('change', function () {
+                isSplitMode = this.checked;
+                if (isSplitMode) {
+                    singlePaymentBox.style.display = 'none';
+                    splitPaymentBox.style.display = 'block';
+                    initialPaidInput.disabled = true;
+                    splitCashInput.disabled = false;
+                    splitNonCashInput.disabled = false;
+                } else {
+                    singlePaymentBox.style.display = 'block';
+                    splitPaymentBox.style.display = 'none';
+                    initialPaidInput.disabled = false;
+                    splitCashInput.disabled = true;
+                    splitNonCashInput.disabled = true;
+                }
+                recalculateCart();
+            });
+            // default disabled for hidden inputs
+            splitCashInput.disabled = true;
+            splitNonCashInput.disabled = true;
+        }
+
+        if (splitCashInput) splitCashInput.addEventListener('input', recalculateCart);
+        if (splitNonCashInput) splitNonCashInput.addEventListener('input', recalculateCart);
 
         let rowCount = 1;
 
@@ -363,19 +434,26 @@
             grandTotalDisplay.textContent = 'Rp ' + grandTotal.toLocaleString('id-ID');
 
             // Hitung sisa dan status bayar
-            let initialPaid = parseFloat(initialPaidInput.value || '0');
-            if (initialPaid > grandTotal) {
-                initialPaid = grandTotal;
-                initialPaidInput.value = grandTotal;
+            let totalPaid = 0;
+            if (isSplitMode) {
+                const cashVal = parseFloat(splitCashInput.value || '0');
+                const nonCashVal = parseFloat(splitNonCashInput.value || '0');
+                totalPaid = cashVal + nonCashVal;
+            } else {
+                totalPaid = parseFloat(initialPaidInput.value || '0');
+                if (totalPaid > grandTotal) {
+                    totalPaid = grandTotal;
+                    initialPaidInput.value = grandTotal;
+                }
             }
 
-            const remaining = Math.max(0, grandTotal - initialPaid);
+            const remaining = Math.max(0, grandTotal - totalPaid);
             remainingBalanceDisplay.textContent = 'Rp ' + remaining.toLocaleString('id-ID');
 
-            if (grandTotal > 0 && initialPaid >= grandTotal) {
+            if (grandTotal > 0 && totalPaid >= grandTotal) {
                 paymentStatusBadge.textContent = 'Lunas';
                 paymentStatusBadge.className = 'badge-lunas small';
-            } else if (initialPaid > 0 && initialPaid < grandTotal) {
+            } else if (totalPaid > 0 && totalPaid < grandTotal) {
                 paymentStatusBadge.textContent = 'Sebagian (DP)';
                 paymentStatusBadge.className = 'badge-sebagian small';
             } else {
@@ -388,12 +466,23 @@
 
         btnPayFull.addEventListener('click', function () {
             const currentTotalText = grandTotalDisplay.textContent.replace(/[^\d]/g, '');
-            initialPaidInput.value = parseInt(currentTotalText || '0');
+            const targetVal = parseInt(currentTotalText || '0');
+            if (isSplitMode) {
+                splitCashInput.value = targetVal;
+                splitNonCashInput.value = 0;
+            } else {
+                initialPaidInput.value = targetVal;
+            }
             recalculateCart();
         });
 
         btnPayZero.addEventListener('click', function () {
-            initialPaidInput.value = 0;
+            if (isSplitMode) {
+                splitCashInput.value = 0;
+                splitNonCashInput.value = 0;
+            } else {
+                initialPaidInput.value = 0;
+            }
             recalculateCart();
         });
     });

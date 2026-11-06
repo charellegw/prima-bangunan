@@ -79,6 +79,10 @@ class InvoiceController extends Controller
             'initial_paid' => 'nullable|numeric|min:0',
             'payment_method' => 'nullable|string',
             'payment_note' => 'nullable|string',
+            'payments' => 'nullable|array',
+            'payments.*.amount' => 'nullable|numeric|min:0',
+            'payments.*.method' => 'nullable|string',
+            'payments.*.note' => 'nullable|string',
             'needs_shipment' => 'nullable|boolean',
             'shipment_address' => 'nullable|string',
             'shipment_fee' => 'nullable|numeric|min:0',
@@ -100,8 +104,10 @@ class InvoiceController extends Controller
                 ], 201);
             }
 
+            // Arahkan ke nota dengan flash message dan opsi cetak struk
             return redirect()->route('invoices.show', $invoice->id)
-                ->with('success', 'Invoice penjualan ' . $invoice->invoice_number . ' berhasil diproses.');
+                ->with('success', 'Transaksi ' . $invoice->invoice_number . ' berhasil diproses.')
+                ->with('print_receipt_id', $invoice->id);
         } catch (Exception $e) {
             if ($request->wantsJson()) {
                 return response()->json([
@@ -124,5 +130,19 @@ class InvoiceController extends Controller
         ])->findOrFail($id);
 
         return view('invoices.show', compact('invoice'));
+    }
+
+    /**
+     * Tampilan cetak struk kasir thermal (58mm / 80mm POS Receipt)
+     */
+    public function receipt($id)
+    {
+        $invoice = Invoice::with([
+            'store',
+            'payment.paymentHistories',
+            'invoiceDetails.item',
+        ])->findOrFail($id);
+
+        return view('invoices.receipt', compact('invoice'));
     }
 }

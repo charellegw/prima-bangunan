@@ -10,6 +10,7 @@ use App\Http\Controllers\InvoiceSupplierController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ShipmentController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\ReportController;
 use App\Http\Middleware\SetTimezone;
 
 Route::middleware('guest')->group(function () {
@@ -40,6 +41,7 @@ Route::middleware(['auth', SetTimezone::class])->group(function () {
     Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
     Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
     Route::get('/invoices/{id}', [InvoiceController::class, 'show'])->name('invoices.show');
+    Route::get('/invoices/{id}/receipt', [InvoiceController::class, 'receipt'])->name('invoices.receipt');
 
     // INVOICE SUPPLIER (PEMBELIAN STOK DARI SUPPLIER)
     Route::get('/invoice-suppliers', [InvoiceSupplierController::class, 'index'])->name('invoice-suppliers.index');
@@ -65,6 +67,13 @@ Route::middleware(['auth', SetTimezone::class])->group(function () {
 
     // KATEGORI
     Route::post('/categories', [ItemCategoryController::class, 'store'])->name('categories.store');
+
+    // LAPORAN & REKAP (REPORTS)
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/sales', [ReportController::class, 'sales'])->name('reports.sales');
+    Route::get('/reports/purchases', [ReportController::class, 'purchases'])->name('reports.purchases');
+    Route::get('/reports/stock', [ReportController::class, 'stock'])->name('reports.stock');
+    Route::get('/reports/debts', [ReportController::class, 'debts'])->name('reports.debts');
 
     // API AJAX ENDPOINTS
     Route::get('/api/items', [ItemController::class, 'getAllItems']);
